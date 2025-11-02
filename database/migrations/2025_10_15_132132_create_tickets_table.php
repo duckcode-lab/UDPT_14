@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('showtime_id')->constrained()->onDelete('cascade');
             $table->foreignId('seat_id')->constrained()->onDelete('cascade');
-            $table->string('status')->default('Đã đặt'); // Đã đặt / Đã thanh toán
+            $table->string('status')->default('Đã đặt');
             $table->decimal('price',8,2);
             $table->timestamp('booked_at')->nullable();
             $table->timestamps();

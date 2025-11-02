@@ -12,15 +12,22 @@ class Movie extends Model
         'title',
         'description',
         'duration',
-        'poster',
-        'trailer_url',
+        'photo',
+        'trailer',
         'release_date',
         'status',
     ];
     public function showtimes()
-{
-    return $this->hasMany(Showtime::class);
-}
-
+    {
+        return $this->hasMany(Showtime::class);
+    }
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
+    public function genres()
+    {
+        return $this->belongsToMany(Genre::class);
+    }
 }
 ?>

@@ -13,6 +13,10 @@ class Booking extends Model
         'user_id',
         'showtime_id',
         'seats',
+        'movie_title',
+        'show_time',
+        'date',
+        'code',
         'total_price',
     ];
     public function user()

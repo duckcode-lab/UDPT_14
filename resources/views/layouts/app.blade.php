@@ -7,30 +7,28 @@
 
         <title>{{ config('app.name', 'Laravel') }}</title>
 
-        <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-
-        <!-- Scripts -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <body class="font-sans antialiased">
-        <div class="lop" style="background-color: rgb(22, 22, 22)">
-            @include('layouts.navigation')
+    <div class="lop" style="background-color: rgb(22, 22, 22)">
 
-            <!-- Page Heading -->
-            @if (isset($header))
-                <header class="item" style="background-color: rgb(0, 0, 0)">
-                    <div class="top">
-                        {{ $header }}
-                    </div>
-                </header>
-            @endif
+        @include('layouts.navigation')
 
-            <!-- Page Content -->
-            <main>
-                @yield('content')
-            </main>
-        </div>
-    </body>
+        @if (isset($header))
+            <header class="item" style="background-color: rgb(0, 0, 0)">
+                <div class="top">
+                    {{ $header }}
+                </div>
+            </header>
+        @endif
+
+        <main>
+            @yield('content')
+        </main>
+    </div>
+</body>
 </html>

@@ -5,17 +5,27 @@ use App\Models\Movie;
 use App\Models\Showtime;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
-{
-    $this->call([
-        MovieSeeder::class,
-        ShowtimeSeeder::class,
-    ]);
-}
+    {
+        $this->call([
+            TheaterSeeder::class,
+            TicketPriceSeeder::class,
+            MovieSeeder::class,
+            ShowtimeSeeder::class,
+        ]);
+        User::updateOrCreate(
+            ['email' => 'admin@cinema.com'],
+            [
+            'name' => 'Admin',
+            'password' => Hash::make('admin123'),
+            'role' => 'admin'
+            ]
+        );
+    }
 }

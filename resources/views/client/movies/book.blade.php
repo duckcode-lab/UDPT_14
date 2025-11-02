@@ -1,11 +1,22 @@
 @extends('layouts.app')
-
 @section('content')
 <div class="min-h-screen bg-black text-white py-10 px-6">
     <div class="max-w-5xl mx-auto bg-gray-900 rounded-2xl shadow-2xl p-8 border border-gray-700">
-
         <div class="flex flex-col md:flex-row gap-6 items-center">
-            <img src="{{ asset($movie->photo) }}" alt="{{ $movie->title }}" class="w-64 h-96 object-cover rounded-lg shadow-md border border-gray-700">
+            @php
+                $photoPath = Str::startsWith($movie->photo, 'uploads/')
+                    ? asset('storage/' . $movie->photo)
+                    : asset($movie->photo);
+            @endphp
+            @if($movie->photo)
+                <a href="{{ route('movies.show', $movie->id) }}">
+                    <img src="{{ $photoPath }}"
+                        alt="{{ $movie->title }}"
+                        class="w-full object-cover" style="height: 400px">
+                </a>
+            @else
+                <span class="text-gray-400 italic">Không có poster</span>
+            @endif
             <div class="flex-1">
                 <h1 class="text-3xl font-bold text-yellow-400 mb-4">{{ $movie->title }}</h1>
                 <p class="text-gray-300 mb-6">{{ $movie->description }}</p>
@@ -15,41 +26,40 @@
 
         <hr class="my-8 border-gray-700">
 
-        <h2 class="text-2xl font-semibold mb-4 text-yellow-400 text-center">🎥 Chọn suất chiếu</h2>
-
+        <label for="showtime_id">Chọn suất chiếu:</label>
         @if($showtimes->count() > 0)
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
                 @foreach($showtimes as $showtime)
                     <div class="showtime-btn bg-gray-800 p-4 rounded-lg border border-gray-700 hover:border-yellow-400 hover:bg-gray-700 cursor-pointer transition duration-200"
                          data-id="{{ $showtime->id }}">
-                        <p class="text-lg font-semibold text-white">{{ $showtime->theater }}</p>
-                        <p class="text-gray-400 text-sm mb-1">Phòng: {{ $showtime->room }}</p>
-                        <p class="text-gray-300 text-sm mb-1">Giờ chiếu: {{ date('H:i d/m/Y', strtotime($showtime->time)) }}</p>
-                        <p class="text-yellow-400 font-semibold">{{ number_format($showtime->price) }} VNĐ</p>
+                        <h3 class="font-bold text-lg">{{ $showtime->theater->name ?? 'Không rõ rạp' }}</h3>
+                        <p>Phòng: <span class="font-semibold">{{ $showtime->room }}</span></p>
+                        <p>Giờ chiếu: <span class="text-yellow-400">{{ \Carbon\Carbon::parse($showtime->time)->format('H:i d/m/Y') }}</span></p>
+                        <p>Giá vé: <span class="text-green-400">{{ number_format($showtime->ticketPrice->price ?? 0) }} VNĐ </span> </p>
                     </div>
                 @endforeach
             </div>
         @else
-            <p class="text-gray-400 text-center mt-6">🎬 Hiện chưa có suất chiếu cho phim này.</p>
+            <p class="text-gray-400 text-center mt-6"> Hiện chưa có suất chiếu cho phim này.</p>
         @endif
-
-        <div id="seat-selection" class="hidden">
-            <h2 class="text-2xl font-semibold mb-4 text-center text-yellow-400">🪑 Chọn ghế ngồi</h2>
-
-            <div class="flex flex-col items-center space-y-3">
-                @php $rows = ['A','B','C','D','E']; @endphp
-                @foreach($rows as $row)
-                    <div class="flex gap-2">
-                        @for($i = 1; $i <= 8; $i++)
-                            <div onclick="toggleSeat('{{ $row.$i }}')"
-                                 id="seat-{{ $row.$i }}"
-                                 class="seat bg-gray-700 w-10 h-10 flex items-center justify-center rounded-md cursor-pointer hover:bg-gray-500 transition">
-                                {{ $row.$i }}
-                            </div>
-                        @endfor
-                    </div>
-                @endforeach
+        <div id="seat-selection" class="hidden" data-booked='@json($bookedSeatsByShowtime)'>
+            <h2 class="text-2xl font-bold mb-4 text-center">Chọn ghế ngồi</h2>
+            <div class="bg-gray-700 mb-6 rounded-md flex items-center justify-center w-full h-12">
+                Màn hình
             </div>
+            @php $rows = ['A','B','C','D','E']; @endphp
+            @foreach($rows as $row)
+                <div class="flex gap-2 justify-center mb-2">
+                    @for($i = 1; $i <= 8; $i++)
+                        @php $seat = $row.$i; @endphp
+                        <div id="seat-{{ $seat }}"
+                            onclick="toggleSeat('{{ $seat }}')"
+                            class="seat w-10 h-10 flex items-center justify-center rounded-md text-sm bg-gray-700 cursor-pointer transition">
+                            {{ $seat }}
+                        </div>
+                    @endfor
+                </div>
+            @endforeach
         </div>
         <div class="text-center mt-8">
             <form id="booking-form" method="POST" action="{{ route('movies.book.store', $movie->id) }}">
@@ -72,21 +82,47 @@
         </div>
     </div>
 </div>
-
 <script>
     let selectedShowtime = null;
     let selectedSeats = [];
+    const bookedSeatsByShowtime = @json($bookedSeatsByShowtime);
+
+    const seatContainer = document.getElementById('seat-selection');
+    seatContainer.classList.add('hidden');
 
     document.querySelectorAll('.showtime-btn').forEach(btn => {
         btn.addEventListener('click', function() {
+
             document.querySelectorAll('.showtime-btn').forEach(b => b.classList.remove('border-yellow-400', 'bg-gray-700'));
             this.classList.add('border-yellow-400', 'bg-gray-700');
             selectedShowtime = this.dataset.id;
-            document.getElementById('seat-selection').classList.remove('hidden');
+            selectedSeats = [];
+
+            seatContainer.classList.remove('hidden');
+
+            document.querySelectorAll('.seat').forEach(seat => {
+                seat.classList.remove('bg-red-600', 'bg-gray-500', 'cursor-not-allowed', 'hover:bg-gray-500');
+                seat.classList.add('bg-gray-700', 'cursor-pointer', 'hover:bg-yellow-500');
+                seat.dataset.disabled = "false";
+            });
+            const bookedSeats = bookedSeatsByShowtime[selectedShowtime] || [];
+            bookedSeats.forEach(id => {
+                const seat = document.getElementById('seat-' + id);
+                if (seat) {
+                    seat.classList.remove('bg-gray-700', 'hover:bg-yellow-500');
+                    seat.classList.add('bg-red-600', 'cursor-not-allowed');
+                    seat.dataset.disabled = "true";
+                }
+            });
+
+            updateConfirmButton();
         });
     });
+
     function toggleSeat(seatId) {
         const seat = document.getElementById('seat-' + seatId);
+        if (!seat || seat.dataset.disabled === "true") return;
+
         if (selectedSeats.includes(seatId)) {
             selectedSeats = selectedSeats.filter(s => s !== seatId);
             seat.classList.remove('bg-red-600');
@@ -115,16 +151,5 @@
             btn.disabled = true;
         }
     }
-
-
-    document.getElementById('confirm-btn').addEventListener('click', function() {
-        if (!selectedShowtime) {
-            alert('⚠️ Vui lòng chọn suất chiếu!');
-        } else if (selectedSeats.length === 0) {
-            alert('⚠️ Vui lòng chọn ít nhất 1 ghế!');
-        } else {
-            alert(`🎟️ Đặt vé thành công!\nSuất chiếu ID: ${selectedShowtime}\nGhế: ${selectedSeats.join(', ')}`);
-        }
-    });
 </script>
 @endsection

@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Movie;
+use App\Models\Theater;
+use App\Models\TicketPrice;
 use App\Models\Showtime;
 use Illuminate\Http\Request;
-
 class ShowtimeController extends Controller
 {
     /**
@@ -20,7 +22,11 @@ class ShowtimeController extends Controller
      */
     public function create()
     {
-        //
+        $movies = Movie::all();
+        $theaters = Theater::all();
+        $prices = TicketPrice::all();
+
+        return view('admin.showtimes.create', compact('movies', 'theaters', 'prices'));
     }
 
     /**
@@ -28,7 +34,23 @@ class ShowtimeController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'movie_id' => 'required|exists:movies,id',
+            'theater_id' => 'required|exists:theaters,id',
+            'ticket_price_id' => 'required|exists:ticket_prices,id',
+            'time' => 'required|date',
+            'room' => 'nullable|string|max:50',
+        ]);
+
+        Showtime::create([
+            'movie_id' => $request->movie_id,
+            'theater_id' => $request->theater_id,
+            'ticket_price_id' => $request->ticket_price_id,
+            'time' => $request->time,
+            'room' => $request->room,
+        ]);
+
+        return redirect()->route('admin.showtimes.index')->with('success', 'Thêm suất chiếu thành công!');
     }
 
     /**
@@ -60,6 +82,7 @@ class ShowtimeController extends Controller
      */
     public function destroy(Showtime $showtime)
     {
-        //
+        $showtime->delete();
+        return back()->with('success', '🗑️ Đã xóa suất chiếu!');
     }
 }

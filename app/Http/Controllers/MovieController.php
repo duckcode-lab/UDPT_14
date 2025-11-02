@@ -3,9 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Movie;
+use App\Models\Comment;
 use Illuminate\Http\Request;
 use App\Models\Booking;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Showtime;
+use Illuminate\Support\Facades\DB;
+use App\Models\Banner;
 
 class MovieController extends Controller
 {
@@ -14,9 +18,46 @@ class MovieController extends Controller
      */
     public function index()
     {
-        $movies = \App\Models\Movie::latest()->paginate(9);
-        return view('client.movies.index', compact('movies'));
+        $weeklyMovies = Movie::latest()->take(4)->get();
+
+         $monthlyMovies = Movie::select('movies.*', DB::raw('COUNT(bookings.id) as total_tickets'))
+            ->join('showtimes', 'showtimes.movie_id', '=', 'movies.id')
+            ->join('bookings', 'bookings.showtime_id', '=', 'showtimes.id')
+            ->whereMonth('bookings.created_at', now()->month)
+            ->whereYear('bookings.created_at', now()->year)
+            ->groupBy('movies.id', 'movies.title', 'movies.description', 'movies.photo', 'movies.duration', 'movies.release_date', 'movies.status', 'movies.created_at', 'movies.updated_at')
+            ->orderByDesc('total_tickets') // 👈 Sắp xếp giảm dần theo tổng vé
+            ->take(4)
+            ->get();
+
+        $banners = Banner::latest()->take(5)->get();
+
+        return view('client.movies.index', compact('weeklyMovies', 'monthlyMovies','banners'));
     }
+
+    public function list()
+    {
+        $movies = \App\Models\Movie::latest()->paginate(12);
+        return view('client.movies.list', compact('movies'));
+    }
+    public function search(Request $request)
+    {
+        $query = trim($request->get('q', ''));
+
+        if ($query === '') {
+            return redirect()->back()->with('error', 'Vui lòng nhập từ khóa để tìm kiếm.');
+        }
+
+        $movies = \App\Models\Movie::where('title', 'LIKE', '%' . $query . '%')
+            ->orderBy('title')
+            ->get();
+
+        if ($request->ajax()) {
+            return response()->json($movies);
+        }
+        return view('client.movies.search_results', compact('movies', 'query'));
+    }
+
 
     /**
      * Show the form for creating a new resource.
@@ -31,7 +72,25 @@ class MovieController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'duration' => 'required|integer',
+            'trailer' => 'nullable|url',
+            'photo' => 'nullable|image|max:2048',
+        ]);
+
+        $data = $request->only('title', 'description', 'duration', 'trailer');
+
+        if ($request->hasFile('photo')) {
+            $file = $request->file('photo');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $file->storeAs('public/movies', $filename);
+            $data['photo'] = $filename;
+        }
+
+        Movie::create($data);
+        return redirect()->route('admin.movies.index')->with('success', 'Phim đã được thêm thành công!');
     }
 
     /**
@@ -41,6 +100,8 @@ class MovieController extends Controller
     {
         $movie = Movie::findOrFail($id);
         return view('client.movies.show', compact('movie'));
+        $movie = Movie::with('comments.user')->findOrFail($id);
+        return view('movies.show', compact('movie'));
     }
 
     /**
@@ -69,10 +130,25 @@ class MovieController extends Controller
     public function book($id)
     {
         $movie = Movie::findOrFail($id);
-        $showtimes = $movie->showtimes;
 
-        return view('client.movies.book', compact('movie', 'showtimes'));
+        $showtimes = Showtime::with(['ticketPrice', 'theater', 'bookings'])
+            ->where('movie_id', $id)
+            ->get();
+        $bookedSeatsByShowtime = [];
+        foreach ($showtimes as $showtime) {
+            $bookedSeatsByShowtime[$showtime->id] = $showtime->bookings
+                ->flatMap(fn($b) => array_map('trim', explode(',', $b->seats)))
+                ->filter()
+                ->unique()
+                ->values()
+                ->toArray();
+        }
+
+        return view('client.movies.book', compact('movie', 'showtimes', 'bookedSeatsByShowtime'));
     }
+
+
+
     public function storeBooking(Request $request, $id)
     {
         if (!Auth::check()) {
@@ -95,6 +171,20 @@ class MovieController extends Controller
             'total_price' => $total,
         ]);
 
-        return redirect()->route('movies.show', $id)->with('success', '🎉 Đặt vé thành công!');
+        return redirect()->route('movies.show', $id)->with('success', ' Đặt vé thành công!');
     }
+    public function storeComment(Request $request, $id)
+    {
+        $request->validate([
+            'content' => 'required|string|max:500',
+        ]);
+
+        Comment::create([
+            'user_id' => Auth::id(),
+            'movie_id' => $id,
+            'content' => $request->content,
+        ]);
+        return redirect()->back()->with('success', 'Bình luận đã được gửi!');
+    }
+
 }

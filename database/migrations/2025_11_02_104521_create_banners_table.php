@@ -11,13 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('showtimes', function (Blueprint $table) {
+        Schema::create('banners', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('movie_id')->constrained('movies')->onDelete('cascade');
-            $table->string('theater');
-            $table->string('room')->nullable();
-            $table->dateTime('time');
-            $table->integer('price')->unsigned();
+            $table->string('title');
+            $table->string('image');
+            $table->text('description')->nullable();
+            $table->string('link')->nullable();
             $table->timestamps();
         });
     }
@@ -27,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('showtimes');
+        Schema::dropIfExists('banners');
     }
 };

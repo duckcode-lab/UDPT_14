@@ -1,0 +1,116 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\Genre;
+use App\Models\Movie;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+
+class MovieAdminController extends Controller
+{
+    public function index()
+    {
+        $movies = Movie::with('genres')->orderBy('created_at', 'desc')->paginate(12);
+        return view('admin.movies.index', compact('movies'));
+    }
+
+    public function create()
+    {
+        $genres = Genre::all();
+        return view('admin.movies.create', compact('genres'));
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'duration' => 'required|numeric|min:1',
+            'genres' => 'array|max:2',
+            'genres.*' => 'exists:genres,id',
+            'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'trailer' => 'nullable|string',
+            'release_date' => 'nullable|date',
+            'status' => 'nullable|string|max:50',
+        ]);
+
+        if (!empty($validated['trailer'])) {
+            $validated['trailer'] = preg_replace(
+                ['/watch\?v=([a-zA-Z0-9_-]+)/', '/youtu\.be\/([a-zA-Z0-9_-]+)/'],
+                'https://www.youtube.com/embed/$1',
+                $validated['trailer']
+            );
+        }
+
+        if ($request->hasFile('photo')) {
+            $validated['photo'] = $request->file('photo')->store('uploads/movies', 'public');
+        }
+
+        $movie = Movie::create($validated);
+
+        if ($request->has('genres')) {
+            $movie->genres()->sync($request->genres);
+        }
+
+        return redirect()->route('admin.movies.index')->with('success', '🎬 Thêm phim thành công!');
+    }
+
+    public function edit(Movie $movie)
+    {
+        $genres = Genre::all();
+        $movie->load('genres');
+        return view('admin.movies.edit', compact('movie', 'genres'));
+    }
+
+    public function update(Request $request, Movie $movie)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'duration' => 'required|integer|min:1',
+            'genres' => 'array|max:2',
+            'genres.*' => 'exists:genres,id',
+            'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'trailer' => 'nullable|string|max:255',
+            'release_date' => 'nullable|date',
+            'status' => 'nullable|string|max:50',
+        ]);
+
+        if (!empty($validated['trailer'])) {
+            $validated['trailer'] = preg_replace(
+                ['/watch\?v=([a-zA-Z0-9_-]+)/', '/youtu\.be\/([a-zA-Z0-9_-]+)/'],
+                'https://www.youtube.com/embed/$1',
+                $validated['trailer']
+            );
+        }
+
+        if ($request->hasFile('photo')) {
+            if ($movie->photo && Storage::disk('public')->exists($movie->photo)) {
+                Storage::disk('public')->delete($movie->photo);
+            }
+            $validated['photo'] = $request->file('photo')->store('uploads/movies', 'public');
+        }
+
+        $movie->update($validated);
+
+        $movie->genres()->sync($request->genres ?? []);
+
+        return redirect()->route('admin.movies.index')->with('success', '🎥 Cập nhật phim thành công!');
+    }
+
+    public function destroy(Movie $movie)
+    {
+
+        if ($movie->photo && Storage::disk('public')->exists($movie->photo)) {
+            Storage::disk('public')->delete($movie->photo);
+        }
+
+        $movie->genres()->detach();
+
+        $movie->delete();
+
+        return redirect()->route('admin.movies.index')->with('success', '🗑️ Đã xóa phim thành công!');
+    }
+}

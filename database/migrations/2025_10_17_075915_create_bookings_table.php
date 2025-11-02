@@ -17,6 +17,8 @@ return new class extends Migration
             $table->foreignId('showtime_id')->constrained()->onDelete('cascade');
             $table->string('seats');
             $table->integer('total_price');
+            $table->string('movie_title');
+            $table->string('code')->unique()->after('date');
             $table->timestamps();
         });
 
