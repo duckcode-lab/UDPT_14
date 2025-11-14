@@ -1,20 +1,21 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="min-h-screen bg-gray-900 text-white py-10 px-6">
+<div class="min-h-screen bg-gray-900  py-10 px-6">
     <div class="max-w-7xl mx-auto">
+        <div class="flex items-center" style="padding-left: 500px;justify-content: space-between;">
         <h1 class="text-3xl font-bold mb-8 text-center text-yellow-400">Phim đang chiếu</h1>
-        <form action="{{ route('movies.search') }}" method="GET" class="absolute w-64 gray-900" style="left:1200px; top:100px">
+        <form action="{{ route('movies.search') }}" method="GET" class=" w-64 gray-900">
             <input type="text" name="q" id="search-box"
                 placeholder="Tìm phim..."
                 autocomplete="off"
-                class="w-full px-3 py-2 rounded-md text-gray-900 focus:outline-none">
+                class="w-full px-3 py-2 rounded-md text-gray-900 focus:outline-none " style=" ">
             <div id="suggestions"
-                class="absolute bg-white text-black w-full mt-1 rounded-md shadow-lg z-50 hidden">
+                class="absolute bg-white text-black  mt-1 rounded-md shadow-lg z-50 hidden" style="White-space: nowrap;overflow: hidden;text-overflow: ellipsis; width: 257px;">
             </div>
         </form>
-
-        <section class="mb-12 relative" style="height: 66%">
+        </div>
+        <section class="mb-12 relative" style="height: 80%">
             <div class="swiper mySwiper">
                 <div class="swiper-wrapper">
                     @foreach($banners as $banner)
@@ -33,13 +34,6 @@
                                 <h2 class="text-2xl font-bold text-yellow-400 mb-2">
                                     {{ $banner->title }}
                                 </h2>
-
-                                {{-- Mô tả phim --}}
-                                @if($banner->description)
-                                    <p class="text-gray-300 text-sm mb-4 line-clamp-3 max-w-3xl ">
-                                        {{ $banner->description }}
-                                    </p>
-                                @endif
 
                                 {{-- Nút xem chi tiết --}}
                                 <a href="{{ $banner->link ?? route('movies.show', $banner->movie_id ?? 0) }}"
@@ -125,7 +119,31 @@
             </div>
         </section>
     </div>
-</div>
+    <footer class="mt-16 text-gray-500 bg-black px-10 py-8 rounded-lg border-t border-gray-700 w-780 ">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mx-auto mb-6 max-w-7xl gap-8">
+                <ul>
+                    <li><a class="font-bold">Hotline <br><br><span class="text-yellow-500">0338216050</span></a></li>
+                    <li><br><a class="font-bold">Email <br><br><span class="text-yellow-500">phamduc13425@gmail.com</span></a></li>
+                </ul>
+                <ul class="mx-10 px-5" >
+                    <li class="font-bold">Dành cho khách hàng</li>
+                    <li class="text-yellow-500 font-bold"><br>Điều khoản sử dụng cho khách hàng</li>
+                    <li class="font-bold"><br>Dành cho Ban Tổ Chức</li>
+                    <li class="text-yellow-500 font-bold"><br>Điều khoản sử dụng cho Ban Tổ Chức</li>
+                </ul>
+                <ul class="" style="padding-left: 120px">
+                    <li class="font-bold">Về Công Ty Chúng Tôi</li>
+                    <li>Điều Khoản Chung </li>
+                    <li>Điều Khoản Giao Dịch</li>
+                    <li>Chính Sách</li>
+                    <li>Thanh Toán</li>
+                    <li>Chính Sách Bảo Mật</li>
+                    <li>Câu Hỏi Thường Gặp</li>
+                </ul>
+            </div>
+            <p class="text-center">&copy;{{ date('Y') }} Cinema Ticket. All rights reserved.</p>
+        </footer>
+    </div>
 @endsection
 <script>
 document.addEventListener('DOMContentLoaded', function() {

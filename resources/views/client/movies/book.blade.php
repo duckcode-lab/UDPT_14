@@ -1,8 +1,14 @@
 @extends('layouts.app')
 @section('content')
 <div class="min-h-screen bg-black text-white py-10 px-6">
+
     <div class="max-w-5xl mx-auto bg-gray-900 rounded-2xl shadow-2xl p-8 border border-gray-700">
+        <a href="{{ route('movies.show', $movie->id) }}"
+            class="bg-gray-700 hover:bg-gray-800 text-white px-2 py-2 rounded-lg shadow-md flex items-center gap-2 z-50 transition" style="width:37px ; margin-bottom: 20px; border-radius: 17px">
+                <span>⬅️</span>
+        </a>
         <div class="flex flex-col md:flex-row gap-6 items-center">
+
             @php
                 $photoPath = Str::startsWith($movie->photo, 'uploads/')
                     ? asset('storage/' . $movie->photo)
@@ -12,7 +18,7 @@
                 <a href="{{ route('movies.show', $movie->id) }}">
                     <img src="{{ $photoPath }}"
                         alt="{{ $movie->title }}"
-                        class="w-full object-cover" style="height: 400px">
+                        class="w-full object-cover" style="height: 400px;">
                 </a>
             @else
                 <span class="text-gray-400 italic">Không có poster</span>
@@ -20,6 +26,9 @@
             <div class="flex-1">
                 <h1 class="text-3xl font-bold text-yellow-400 mb-4">{{ $movie->title }}</h1>
                 <p class="text-gray-300 mb-6">{{ $movie->description }}</p>
+                <p class="text-gray-400 mb-2">
+                    {{ $movie->genres->pluck('name')->implode(', ') }}
+                </p>
                 <p class="text-gray-400"><b>Thời lượng:</b> {{ $movie->duration }} phút</p>
             </div>
         </div>
@@ -73,7 +82,7 @@
                     Xác nhận đặt vé
                 </button>
             @else
-                <a href="{{ route('login') }}"
+                <a href="{{ route('login_modal') }}"
                     class="bg-yellow-500 hover:bg-red-600 text-black font-semibold px-6 py-3 rounded-lg shadow-md transition duration-300 inline-block">
                     Đăng nhập để đặt vé
                 </a>
@@ -81,6 +90,30 @@
             </form>
         </div>
     </div>
+    <footer class="mt-16 text-gray-500 bg-black px-10 py-8 rounded-lg border-t border-gray-700 w-780 ">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mx-auto mb-6 max-w-7xl gap-8">
+                <ul>
+                    <li><a class="font-bold">Hotline <br><br><span class="text-yellow-500">0338216050</span></a></li>
+                    <li><br><a class="font-bold">Email <br><br><span class="text-yellow-500">phamduc13425@gmail.com</span></a></li>
+                </ul>
+                <ul class="mx-10 px-5" >
+                    <li class="font-bold">Dành cho khách hàng</li>
+                    <li class="text-yellow-500 font-bold"><br>Điều khoản sử dụng cho khách hàng</li>
+                    <li class="font-bold"><br>Dành cho Ban Tổ Chức</li>
+                    <li class="text-yellow-500 font-bold"><br>Điều khoản sử dụng cho Ban Tổ Chức</li>
+                </ul>
+                <ul class="" style="padding-left: 120px">
+                    <li class="font-bold">Về Công Ty Chúng Tôi</li>
+                    <li>Điều Khoản Chung </li>
+                    <li>Điều Khoản Giao Dịch</li>
+                    <li>Chính Sách</li>
+                    <li>Thanh Toán</li>
+                    <li>Chính Sách Bảo Mật</li>
+                    <li>Câu Hỏi Thường Gặp</li>
+                </ul>
+            </div>
+            <p class="text-center">&copy;{{ date('Y') }} Cinema Ticket. All rights reserved.</p>
+        </footer>
 </div>
 <script>
     let selectedShowtime = null;

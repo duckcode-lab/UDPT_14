@@ -12,11 +12,6 @@
         </div>
 
         <div>
-            <label class="block mb-1">Mô tả</label>
-            <textarea name="description" rows="4" class="w-full p-2 rounded text-black"></textarea>
-        </div>
-
-        <div>
             <label class="block mb-1">Liên kết (tùy chọn)</label>
             <input type="text" name="link" class="w-full p-2 rounded text-black">
         </div>
