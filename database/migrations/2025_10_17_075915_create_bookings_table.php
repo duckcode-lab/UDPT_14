@@ -18,7 +18,8 @@ return new class extends Migration
             $table->string('seats');
             $table->integer('total_price');
             $table->string('movie_title');
-            $table->string('code')->unique()->after('date');
+            $table->date('date');
+            $table->string('code');
             $table->timestamps();
         });
 

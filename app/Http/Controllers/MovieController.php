@@ -20,15 +20,20 @@ class MovieController extends Controller
     {
         $weeklyMovies = Movie::latest()->take(4)->get();
 
-         $monthlyMovies = Movie::select('movies.*', DB::raw('COUNT(bookings.id) as total_tickets'))
-            ->join('showtimes', 'showtimes.movie_id', '=', 'movies.id')
-            ->join('bookings', 'bookings.showtime_id', '=', 'showtimes.id')
-            ->whereMonth('bookings.created_at', now()->month)
-            ->whereYear('bookings.created_at', now()->year)
-            ->groupBy('movies.id', 'movies.title', 'movies.description', 'movies.photo', 'movies.duration', 'movies.release_date', 'movies.status', 'movies.created_at', 'movies.updated_at')
-            ->orderByDesc('total_tickets') // 👈 Sắp xếp giảm dần theo tổng vé
-            ->take(4)
-            ->get();
+        $monthlyMovies = Movie::select(
+            'movies.id',
+            'movies.title',
+            DB::raw('MAX(movies.poster) as poster'),
+            DB::raw('COUNT(bookings.id) as total_tickets')
+        )
+        ->join('showtimes', 'showtimes.movie_id', '=', 'movies.id')
+        ->join('bookings', 'bookings.showtime_id', '=', 'showtimes.id')
+        ->whereMonth('bookings.created_at', now()->month)
+        ->whereYear('bookings.created_at', now()->year)
+        ->groupBy('movies.id', 'movies.title')
+        ->orderByDesc('total_tickets')
+        ->take(4)
+        ->get();
 
         $banners = Banner::latest()->take(5)->get();
 
@@ -98,10 +103,8 @@ class MovieController extends Controller
      */
     public function show($id)
     {
-        $movie = Movie::findOrFail($id);
-        return view('client.movies.show', compact('movie'));
         $movie = Movie::with('comments.user')->findOrFail($id);
-        return view('movies.show', compact('movie'));
+        return view('client.movies.show', compact('movie'));
     }
 
     /**

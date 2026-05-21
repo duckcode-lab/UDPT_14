@@ -10,6 +10,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ShowtimeController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\Admin\BannerAdminController;
+use App\Http\Controllers\Auth\RegisteredUserController;
 
 
 // KHÁCH (Chưa đăng nhập)
@@ -21,7 +22,13 @@ Route::get('/movies/{id}', [MovieController::class, 'show'])->name('movies.show'
 Route::post('/movies/{movie}/comments', [CommentController::class, 'store'])
     ->middleware('auth')
     ->name('comments.store');
-
+Route::get('/verify-otp', function () {
+    return view('auth.verify-otp');
+})->name('verify.otp');
+Route::post('/resend-otp', [RegisteredUserController::class, 'resendOtp'])
+    ->name('resend.otp');
+Route::post('/verify-otp', [RegisteredUserController::class, 'verifyOtp'])
+    ->name('verify.otp.submit');
 // NGƯỜI DÙNG ĐÃ ĐĂNG NHẬP
 Route::middleware(['auth'])->group(function () {
     Route::get('/movies/{id}/book', [MovieController::class, 'book'])->name('movies.book');

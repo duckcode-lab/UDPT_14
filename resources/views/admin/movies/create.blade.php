@@ -13,18 +13,10 @@
         <label class="block text-white">Mô tả:</label>
         <textarea name="description" class="block w-full p-2 text-black rounded" required></textarea>
 
-        <div class="mb-4">
-            <label for="genres" class="block text-sm font-medium text-white">Thể loại (tối đa 2)</label>
-            <select name="genres[]" id="genres" multiple
-                class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-yellow-400 focus:border-yellow-400">
-                @foreach($genres as $genre)
-                    <option value="{{ $genre->id }}"
-                        {{ isset($movie) && $movie->genres->contains($genre->id) ? 'selected' : '' }}>
-                        {{ $genre->name }}
-                    </option>
-                @endforeach
-            </select>
-            <small class="text-white">Giữ Ctrl (hoặc Cmd trên Mac) để chọn nhiều thể loại (tối đa 2).</small>
+       <div class="mb-4">
+            <label class="block text-white">Thể loại:</label>
+            <input type="text" name="genres"
+                class="block w-full p-2 text-black rounded">
         </div>
 
         <label class="block text-white">Thời lượng (phút):</label>

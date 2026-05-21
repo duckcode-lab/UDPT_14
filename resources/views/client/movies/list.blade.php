@@ -3,17 +3,17 @@
 @section('content')
 <div class="min-h-screen bg-gray-900 text-white py-10 px-6">
     <div class="max-w-7xl mx-auto">
-        <div class="flex items-center" style="justify-content: space-between;">
+        <div class="flex items-center max-w-7xl" style="justify-content: space-between;">
+            <h1 class="text-3xl font-bold mb-8 text-right text-yellow-400 "style="padding-left: 500px">Phim đang chiếu</h1>
             <form action="{{ route('movies.search') }}" method="GET" class=" w-64 gray-900">
-                <h1 class="text-3xl font-bold mb-8 text-right text-yellow-400"style="padding-left:500px">Phim đang chiếu</h1>
-                <input type="text" name="q" id="search-box"
-                    placeholder="Tìm phim..."
-                    autocomplete="off"
-                    class="w-full px-3 py-2 rounded-md text-gray-900 focus:outline-none" >
-                <div id="suggestions"
-                    class="absolute bg-white text-black mt-1 rounded-md shadow-lg z-50 hidden" style="white-space: nowrap;overflow: hidden;text-overflow: ellipsis;width: 250px;">
-                </div>
-            </form>
+            <input type="text" name="q" id="search-box"
+                placeholder="Tìm phim..."
+                autocomplete="off"
+                class="w-full px-3 py-2 rounded-md text-gray-900 focus:outline-none">
+            <div id="suggestions"
+                class="absolute bg-white text-black  mt-1 rounded-md shadow-lg z-50 hidden" style="White-space: nowrap;overflow: hidden;text-overflow: ellipsis; width: 257px;">
+            </div>
+        </form>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             @foreach($movies as $movie)

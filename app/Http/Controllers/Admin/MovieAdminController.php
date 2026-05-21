@@ -28,14 +28,14 @@ class MovieAdminController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'duration' => 'required|numeric|min:1',
-            'genres' => 'array|max:2',
-            'genres.*' => 'exists:genres,id',
+            'genres' => 'nullable|string',
             'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'trailer' => 'nullable|string',
             'release_date' => 'nullable|date',
             'status' => 'nullable|string|max:50',
         ]);
 
+        // xử lý trailer
         if (!empty($validated['trailer'])) {
             $validated['trailer'] = preg_replace(
                 ['/watch\?v=([a-zA-Z0-9_-]+)/', '/youtu\.be\/([a-zA-Z0-9_-]+)/'],
@@ -44,17 +44,33 @@ class MovieAdminController extends Controller
             );
         }
 
+        // upload ảnh
         if ($request->hasFile('photo')) {
             $validated['photo'] = $request->file('photo')->store('uploads/movies', 'public');
         }
 
+        // tạo movie
         $movie = Movie::create($validated);
 
-        if ($request->has('genres')) {
-            $movie->genres()->sync($request->genres);
+        // xử lý genres
+        $genreIds = [];
+
+        if ($request->genres) {
+            $genreNames = explode(',', $request->genres);
+
+            foreach ($genreNames as $name) {
+                $name = trim($name);
+                if (!$name) continue;
+
+                $genre = Genre::firstOrCreate(['name' => $name]);
+                $genreIds[] = $genre->id;
+            }
         }
 
-        return redirect()->route('admin.movies.index')->with('success', '🎬 Thêm phim thành công!');
+        $movie->genres()->sync($genreIds);
+
+        return redirect()->route('admin.movies.index')
+            ->with('success', '🎬 Thêm phim thành công!');
     }
 
     public function edit(Movie $movie)
@@ -70,8 +86,7 @@ class MovieAdminController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'duration' => 'required|integer|min:1',
-            'genres' => 'array|max:2',
-            'genres.*' => 'exists:genres,id',
+            'genres' => 'nullable|string',
             'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'trailer' => 'nullable|string|max:255',
             'release_date' => 'nullable|date',
@@ -95,7 +110,22 @@ class MovieAdminController extends Controller
 
         $movie->update($validated);
 
-        $movie->genres()->sync($request->genres ?? []);
+        if ($request->genres) {
+            $genreNames = explode(',', $request->genres);
+
+            foreach ($genreNames as $name) {
+                $name = trim($name);
+                if (!$name) continue;
+
+                $genre = \App\Models\Genre::firstOrCreate([
+                    'name' => $name
+                ]);
+
+                $genreIds[] = $genre->id;
+            }
+        }
+
+        $movie->genres()->sync($genreIds ?? []);
 
         return redirect()->route('admin.movies.index')->with('success', '🎥 Cập nhật phim thành công!');
     }

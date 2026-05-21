@@ -9,7 +9,7 @@
             <input type="text" name="q" id="search-box"
                 placeholder="Tìm phim..."
                 autocomplete="off"
-                class="w-full px-3 py-2 rounded-md text-gray-900 focus:outline-none " style=" ">
+                class="w-full px-3 py-2 rounded-md text-gray-900 focus:outline-none">
             <div id="suggestions"
                 class="absolute bg-white text-black  mt-1 rounded-md shadow-lg z-50 hidden" style="White-space: nowrap;overflow: hidden;text-overflow: ellipsis; width: 257px;">
             </div>
@@ -88,36 +88,53 @@
         </section>
         {{-- 🔥 PHIM NỔI BẬT TRONG THÁNG --}}
         <section>
-            <h2 class="text-3xl font-bold text-orange-400 mb-6 ">
-                🔥 Phim Nổi Bật Trong Tháng
-            </h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                @foreach($monthlyMovies as $movie)
-                    <div class="relative group bg-gray-900 rounded-lg shadow-lg hover:scale-105 transition duration-300 overflow-hidden">
-                        <a href="{{ route('movies.show', $movie->id) }}" class="text-sm text-white underline hover:text-yellow-400">
-                            @php
-                                $photoPath = Str::startsWith($movie->photo, 'uploads/')
-                                    ? asset('storage/' . $movie->photo)
-                                    : asset($movie->photo);
-                            @endphp
-                            @if($movie->photo)
-                                <img src="{{ $photoPath }}"
-                                    alt="{{ $movie->title }}"
-                                    class="w-full object-cover" style="height: 400px">
-                            @else
-                                <span class="text-gray-400 italic">Không có poster</span>
-                            @endif
-                            <div class="absolute inset-0 flex flex-col justify-end p-3 bg-gradient-to-t from-black via-transparent opacity-0 group-hover:opacity-100 transition">
-                                <h3 class="text-yellow-400 font-semibold">{{ $movie->title }}</h3>
-                                <p class="text-gray-400 text-sm mt-1">
-                                    {{ $movie->genres->pluck('name')->implode(', ') }}
-                                </p>
-                            </div>
-                        </a>
+    <h2 class="text-3xl font-bold text-orange-400 mb-6">
+        🔥 Phim Nổi Bật Trong Tháng
+    </h2>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        @foreach($monthlyMovies as $movie)
+
+            @php
+                $photoPath = Str::startsWith($movie->photo, 'uploads/')
+                    ? asset('storage/' . $movie->photo)
+                    : asset($movie->photo);
+            @endphp
+
+            <a href="{{ route('movies.show', $movie->id) }}"
+               class="block group relative bg-gray-900 rounded-xl shadow-lg overflow-hidden transform transition duration-300 hover:scale-[1.05]">
+
+                {{-- Ảnh --}}
+                <img src="{{ $photoPath }}"
+                     alt="{{ $movie->title }}"
+                     class="transition duration-500 group-hover:scale-110">
+
+                {{-- Overlay --}}
+                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent
+                            opacity-0 group-hover:opacity-100 transition duration-300"></div>
+
+                {{-- Text --}}
+                <div class="absolute bottom-0 w-full p-4 translate-y-6 opacity-0
+                            group-hover:translate-y-0 group-hover:opacity-100
+                            transition-all duration-300">
+
+                    <h3 class="text-yellow-400 font-bold text-lg drop-shadow">
+                        {{ $movie->title }}
+                    </h3>
+
+                    <p class="text-gray-300 text-sm">
+                        {{ $movie->genres->pluck('name')->implode(', ') }}
+                    </p>
+
+                    <div class="mt-2 text-sm text-gray-200 font-semibold flex items-center gap-1">
+                        Chi tiết
                     </div>
-                @endforeach
-            </div>
-        </section>
+                </div>
+            </a>
+
+        @endforeach
+    </div>
+</section>
     </div>
     <footer class="mt-16 text-gray-500 bg-black px-10 py-8 rounded-lg border-t border-gray-700 w-780 ">
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mx-auto mb-6 max-w-7xl gap-8">

@@ -55,7 +55,7 @@
                         Đặt vé ngay
                     </a>
                 @else
-                    <a href="{{ route('login_modal') }}"
+                    <a href="{{ route('login') }}"
                         class="inline-block mt-4 px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 transition">
                         Đăng nhập để đặt vé
                     </a>

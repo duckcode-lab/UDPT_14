@@ -11,15 +11,15 @@
             <h1 class="text-2xl font-bold text-yellow-400 mb-6">
                 Kết quả tìm kiếm cho: <span class="text-white">"{{ $query }}"</span>
             </h1>
-            <form action="{{ route('movies.search') }}" method="GET" class=" w-64 gray-900" style="margin-left: 270px">
-                <input type="text" name="q" id="search-box"
-                    placeholder="Tìm phim..."
-                    autocomplete="off"
-                    class="w-full px-3 py-2 rounded-md text-gray-900 focus:outline-none">
-                <div id="suggestions"
-                    class="absolute bg-white text-black w-8 mt-1 rounded-md shadow-lg z-50 hidden" style="white-space: nowrap;overflow: hidden;text-overflow: ellipsis;width: 250px;">
-                </div>
-            </form>
+            <form action="{{ route('movies.search') }}" method="GET" class=" w-64 gray-900">
+            <input type="text" name="q" id="search-box"
+                placeholder="Tìm phim..."
+                autocomplete="off"
+                class="w-full px-3 py-2 rounded-md text-gray-900 focus:outline-none">
+            <div id="suggestions"
+                class="absolute bg-white text-black  mt-1 rounded-md shadow-lg z-50 hidden" style="White-space: nowrap;overflow: hidden;text-overflow: ellipsis; width: 257px;">
+            </div>
+        </form>
         </div>
         @if($movies->isEmpty())
             <p class="text-gray-400 text-center">Không tìm thấy bộ phim nào.</p>
