@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Showtime extends Model
 {
     use HasFactory;
-    protected $fillable = ['movie_id', 'theater_id', 'ticket_price_id', 'room', 'time'];
+    protected $fillable = ['movie_id', 'theater_name', 'ticket_price', 'room', 'time'];
     public function movie()
     {
         return $this->belongsTo(Movie::class);

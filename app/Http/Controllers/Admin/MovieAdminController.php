@@ -75,8 +75,9 @@ class MovieAdminController extends Controller
 
     public function edit(Movie $movie)
     {
+        $genreNames = $movie->genres->pluck('name')->toArray();
+        $movie->genre_string = implode(', ', $genreNames);
         $genres = Genre::all();
-        $movie->load('genres');
         return view('admin.movies.edit', compact('movie', 'genres'));
     }
 
@@ -94,11 +95,10 @@ class MovieAdminController extends Controller
         ]);
 
         if (!empty($validated['trailer'])) {
-            $validated['trailer'] = preg_replace(
-                ['/watch\?v=([a-zA-Z0-9_-]+)/', '/youtu\.be\/([a-zA-Z0-9_-]+)/'],
-                'https://www.youtube.com/embed/$1',
-                $validated['trailer']
-            );
+            $pattern = '/^.*(?:(?:youtu\.be\/|v\/|vi\/|u\/\w\/|embed\/|shorts\/)|(?:(?:watch)?\?v(?:i)?=|\&v(?:i)?=))([^#\&\?]*).*/';
+            if (preg_match($pattern, $validated['trailer'], $matches)) {
+                $validated['trailer'] = 'https://www.youtube.com/embed/' . $matches[1];
+            }
         }
 
         if ($request->hasFile('photo')) {

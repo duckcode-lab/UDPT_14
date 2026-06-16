@@ -86,12 +86,12 @@
         <div class="movie-title">{{ $ticket->showtime->movie->title }}</div>
 
         <div class="ticket-info">
-            <p>📍 <span class="highlight">Rạp:</span> {{ $ticket->showtime->theater->name }}</p>
-            <p>🏠 <span class="highlight">Địa chỉ:</span> {{ $ticket->showtime->theater->address }}</p>
+            <p>📍 <span class="highlight">Rạp:</span> {{ $ticket->showtime->theater_name ?? ($ticket->showtime->theater->name ?? 'Không rõ rạp') }}</p>
+            <p>🏠 <span class="highlight">Phòng chiếu:</span> {{ $ticket->showtime->room ?? 'Không rõ phòng' }}</p>
             <p>💺 <span class="highlight">Ghế đã chọn:</span> {{ $ticket->seats }}</p>
             <p>🕒 <span class="highlight">Thời gian chiếu:</span> {{ \Carbon\Carbon::parse($ticket->showtime->time)->format('H:i d/m/Y') }}</p>
             <p>🎫 <span class="highlight">Mã vé:</span> {{ $ticket->code }}</p>
-            <p>💰 <span class="highlight">Tổng tiền:</span> {{ number_format($ticket->total_price) }} VND</p>
+            <p>💰 <span class="highlight">Tổng tiền:</span> {{ number_format($ticket->total_price) }} VNĐ</p>
         </div>
 
         <p>hãy đến rạp và <strong>thanh toán</strong> tại rạp, xin cảm ơn ❤️</p>

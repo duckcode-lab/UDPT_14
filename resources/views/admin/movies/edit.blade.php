@@ -14,10 +14,13 @@
         <label class="block text-white">Mô tả:</label>
         <textarea name="description" class="block w-full p-2 text-black rounded" required>{{ $movie->description }}</textarea>
 
-        <div class="mb-4">
-            <label class="block text-white">Thể loại:</label>
-            <input type="text" name="genres"
-                class="block w-full p-2 text-black rounded">
+        <div>
+            <label class="block mb-2 font-bold text-white">Thể loại :</label>
+            <input type="text"
+                name="genres"
+                value="{{ old('genres', $movie->genre_string ?? '') }}"
+                class="w-full p-2 text-black rounded"
+                required>
         </div>
 
         <label class="block text-white">Thời lượng (phút):</label>

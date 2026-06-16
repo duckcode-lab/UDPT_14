@@ -58,7 +58,8 @@ class BookingController extends Controller
         }
 
         $seatCount = count($seats);
-        $totalPrice = $showtime->ticketPrice->price * $seatCount;
+        $singlePrice = $showtime->ticket_price ?? ($showtime->ticketPrice->price ?? 0);
+        $totalPrice = $seatCount * $singlePrice;
 
         $ticket = Booking::create([
             'user_id' => auth()->id(),
@@ -87,8 +88,6 @@ class BookingController extends Controller
         $booking = Booking::where('id', $id)
             ->where('user_id', auth()->id())
             ->firstOrFail();
-
-        $booking->delete();
 
         try {
             Mail::to(auth()->user()->email)->send(new UserCancelBookingMail($booking));

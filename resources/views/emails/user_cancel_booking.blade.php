@@ -86,13 +86,13 @@
 
         <div class="ticket-info">
             <p>🎬 <span class="highlight">phim:</span>{{ $booking->movie_title }}</p>
-            <p>📍 <span class="highlight">Rạp:</span> {{ $booking->showtime->theater->name }}</p>
+            <p>📍 <span class="highlight">Rạp:</span> {{ $booking->showtime->theater_name ?? ($booking->showtime->theater->name ?? 'Không rõ rạp') }}</p>
             <p>💺 <span class="highlight">Ghế:</span> {{ $booking->seats }}</p>
             <p>🕒 <span class="highlight">Suất chiếu:</span> {{ \Carbon\Carbon::parse($booking->show_time)->format('H:i d/m/Y') }}</p>
             <p>🎫 <span class="highlight">Mã vé:</span> {{ $booking->code }}</p>
         </div>
 
-        
+
 
         <div style="text-align:center; margin-top:20px;">
             <a href="{{ url('/') }}" class="button">🎞️ Đặt vé khác ngay</a>

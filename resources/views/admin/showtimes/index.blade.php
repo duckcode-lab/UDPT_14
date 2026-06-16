@@ -27,13 +27,13 @@
                     @foreach($movieShowtimes as $showtime)
                         <div class="p-3 bg-gray-800 rounded-lg mb-2 flex flex-col md:flex-row md:justify-between md:items-center">
                             <div class="info">
-                                <p><span class="font-semibold text-white">{{ $showtime->theater->name }}</span></p>
+                                {{ $showtime->theater_name ?? ($showtime->theater->name ?? 'Không xác định') }}
                                 <div class="flex flex-col md:flex-row md:gap-12">
                                     <p>Phòng: {{ $showtime->room }}</p>
                                     <p>Giờ chiếu: {{ \Carbon\Carbon::parse($showtime->time)->format('H:i d/m/Y') }}</p>
                                     <p>Giá vé:
                                         <span class="text-green-400 font-semibold">
-                                            {{ number_format($showtime->ticketPrice->price ?? 0, 0, ',', '.') }} VNĐ
+                                            {{ isset($showtime->ticket_price) ? number_format($showtime->ticket_price) . ' VNĐ' : ($showtime->ticketPrice ? number_format($showtime->ticketPrice->price) . ' VNĐ' : '0 VNĐ') }}
                                         </span>
                                     </p>
                                 </div>

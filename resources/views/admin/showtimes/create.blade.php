@@ -19,22 +19,25 @@
             </div>
 
             <div>
-                <label class="block mb-2 font-bold text-yellow-500">Chọn rạp:</label>
-                <select name="theater_id" class="w-full p-2 text-black rounded" required>
-                    <option value="">-- Chọn rạp --</option>
-                    @foreach($theaters as $theater)
-                        <option value="{{ $theater->id }}">{{ $theater->name }} ({{ $theater->address }})</option>
-                    @endforeach
-                </select>
+                <label class="block mb-2 font-bold text-yellow-500">Tên rạp chiếu:</label>
+                <input type="text"
+                       name="theater_name"
+                       value="{{ old('theater_name') }}"
+                       class="w-full p-2 text-black rounded"
+                       placeholder="Ví dụ: Lotte Cinema Hà Đông, CGV Nguyễn Chí Thanh..."
+                       required>
             </div>
 
             <div>
-                <label class="block mb-2 font-bold text-yellow-500">Chọn giá vé:</label>
-                <select name="ticket_price_id" class="w-full p-2 text-black rounded" required>
-                    <option value="">-- Chọn giá vé --</option>
-                    @foreach($prices as $price)
-                        <option value="{{ $price->id }}">{{ number_format($price->price) }} VNĐ ({{ $price->type }})</option>
-                    @endforeach
+                <label class="block mb-2 font-bold text-yellow-500">Giá vé:</label>
+                <input type="number"
+                       name="ticket_price"
+                       value="{{ old('ticket_price') }}"
+                       class="w-full p-2 text-black rounded"
+                       placeholder="Ví dụ: 100000"
+                       step="1000"
+                       min="0"
+                       required>
                 </select>
             </div>
 
