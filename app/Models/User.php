@@ -21,6 +21,12 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'phone',
+        'birth_date',
+        'address',
+        'gender',
+        'avatar',
         'otp',
         'otp_expires_at',
         'email_verified_at',
@@ -43,8 +49,10 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'birth_date' => 'date',
         'password' => 'hashed',
     ];
+
     public function comments()
     {
         return $this->hasMany(Comment::class);

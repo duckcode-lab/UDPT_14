@@ -21,9 +21,9 @@
                     </x-nav-link>
 
                     @auth
-                        @if(Auth::user()->role === 'admin')
+                        @if(Auth::user()->role === 'admin' && request()->routeIs('admin.*'))
                             <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
-                                Bảng điều khiển
+                                Trang quản trị
                             </x-nav-link>
                             <x-nav-link :href="route('admin.movies.index')" :active="request()->routeIs('admin.movies.index')">
                                 Quản lý phim
@@ -37,7 +37,10 @@
                             <x-nav-link :href="route('admin.banners.index')" :active="request()->routeIs('admin.banners.*')">
                                 Quản lý quảng bá
                             </x-nav-link>
-                        @else
+                            <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
+                                Quản lý user
+                            </x-nav-link>
+                        @elseif(Auth::user()->role !== 'admin')
                             <x-nav-link :href="route('bookings.index')" :active="request()->routeIs('bookings.index')">
                                 Vé của tôi
                             </x-nav-link>
@@ -61,17 +64,12 @@
                         </x-slot>
 
                         <x-slot name="content">
-                            <x-dropdown-link :href="route('admin.profile.edit')">
+                            <x-dropdown-link :href="route('profile.edit')">
                                 Hồ sơ cá nhân
                             </x-dropdown-link>
 
                             @if(Auth::user()->role === 'admin')
-                                <x-dropdown-link :href="route('admin.dashboard')">Bảng điều khiển</x-dropdown-link>
-                                <x-dropdown-link :href="route('admin.movies.index')">Quản lý phim</x-dropdown-link>
-                                <x-dropdown-link :href="route('admin.showtimes.index')">Quản lý suất chiếu</x-dropdown-link>
-                                <x-dropdown-link :href="route('admin.bookings.index')">Quản lý vé đặt</x-dropdown-link>
-                            @else
-                                <x-dropdown-link :href="route('bookings.index')">Vé của tôi</x-dropdown-link>
+                                <x-dropdown-link :href="route('admin.dashboard')">Trang quản trị</x-dropdown-link>
                             @endif
 
                             <form method="POST" action="{{ route('logout') }}">
@@ -117,9 +115,16 @@
             <x-responsive-nav-link :href="route('movies.list')">Phim đang chiếu</x-responsive-nav-link>
 
             @auth
-                @if(Auth::user()->role === 'admin')
-                    <x-responsive-nav-link :href="route('admin.dashboard')">Bảng điều khiển</x-responsive-nav-link>
-                @else
+                @if(Auth::user()->role === 'admin' && request()->routeIs('admin.*'))
+                    <x-responsive-nav-link :href="route('admin.dashboard')">Trang quản trị</x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('admin.movies.index')">Quản lý phim</x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('admin.showtimes.index')">Quản lý suất chiếu</x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('admin.bookings.index')">Quản lý vé đặt</x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('admin.banners.index')">Quản lý quảng bá</x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('admin.users.index')">Quản lý user</x-responsive-nav-link>
+                @endif
+                <x-responsive-nav-link :href="route('profile.edit')">Hồ sơ cá nhân</x-responsive-nav-link>
+                @if(Auth::user()->role !== 'admin')
                     <x-responsive-nav-link :href="route('bookings.index')">Vé của tôi</x-responsive-nav-link>
                 @endif
                 <form method="POST" action="{{ route('logout') }}">

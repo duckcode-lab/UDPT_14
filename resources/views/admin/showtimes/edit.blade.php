@@ -25,24 +25,16 @@
 
             <input type="hidden" name="movie_id" value="{{ $showtime->movie_id }}">
             <div>
-                <label class="block mb-2 font-bold text-yellow-500">Tên rạp chiếu:</label>
-                <input type="text"
-                       name="theater_name"
-                       value="{{ old('theater_name', $showtime->theater_name ?? ($showtime->theater->name ?? '')) }}"
-                       class="w-full p-2 text-black rounded"
-                       placeholder="Ví dụ: Lotte Cinema Hà Đông, CGV Nguyễn Chí Thanh..."
-                       required>
-            </div>
-            <div>
-                <label class="block mb-2 font-bold text-yellow-500">Giá vé (VNĐ):</label>
-                <input type="number"
-                       name="ticket_price"
-                       value="{{ old('ticket_price', $showtime->ticket_price ?? ($showtime->ticketPrice->price ?? '')) }}"
-                       min="0"
-                       step="1000"
-                       class="w-full p-2 text-black rounded"
-                       placeholder="Ví dụ: 85000, 120000..."
-                       required>
+                <label class="block mb-2 font-bold text-yellow-500">Rạp và giá vé:</label>
+                <select name="ticket_price_id" class="w-full p-2 text-black rounded" required>
+                    @foreach($prices as $price)
+                        <option value="{{ $price->id }}"
+                            @selected(old('ticket_price_id', $showtime->ticket_price_id) == $price->id)>
+                            {{ $price->theater->name }} - {{ $price->type }}:
+                            {{ number_format($price->price) }} VNĐ
+                        </option>
+                    @endforeach
+                </select>
             </div>
             <div>
                 <label class="block mb-2 font-bold text-yellow-500">Ngày & Giờ chiếu:</label>

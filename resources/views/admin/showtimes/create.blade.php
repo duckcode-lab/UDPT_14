@@ -19,25 +19,15 @@
             </div>
 
             <div>
-                <label class="block mb-2 font-bold text-yellow-500">Tên rạp chiếu:</label>
-                <input type="text"
-                       name="theater_name"
-                       value="{{ old('theater_name') }}"
-                       class="w-full p-2 text-black rounded"
-                       placeholder="Ví dụ: Lotte Cinema Hà Đông, CGV Nguyễn Chí Thanh..."
-                       required>
-            </div>
-
-            <div>
-                <label class="block mb-2 font-bold text-yellow-500">Giá vé:</label>
-                <input type="number"
-                       name="ticket_price"
-                       value="{{ old('ticket_price') }}"
-                       class="w-full p-2 text-black rounded"
-                       placeholder="Ví dụ: 100000"
-                       step="1000"
-                       min="0"
-                       required>
+                <label class="block mb-2 font-bold text-yellow-500">Rạp và giá vé:</label>
+                <select name="ticket_price_id" class="w-full p-2 text-black rounded" required>
+                    <option value="">-- Chọn rạp và giá vé --</option>
+                    @foreach($prices as $price)
+                        <option value="{{ $price->id }}" @selected(old('ticket_price_id') == $price->id)>
+                            {{ $price->theater->name }} - {{ $price->type }}:
+                            {{ number_format($price->price) }} VNĐ
+                        </option>
+                    @endforeach
                 </select>
             </div>
 
@@ -50,11 +40,12 @@
                 <label class="block mb-2 font-bold text-yellow-500">Phòng chiếu:</label>
                 <select name="room" class="w-full p-2 text-black rounded" required>
                     <option value="">-- Chọn phòng --</option>
-                    <option value="Phòng 1">Phòng 1</option>
-                    <option value="Phòng 2">Phòng 2</option>
-                    <option value="Phòng 3">Phòng 3</option>
-                    <option value="Phòng 4">Phòng 4</option>
-                    <option value="Phòng 5">Phòng 5</option>
+                    @for ($i = 1; $i <= 5; $i++)
+                        @php $roomName = "Phòng " . $i; @endphp
+                        <option value="{{ $roomName }}" @selected(old('room') == $roomName)>
+                            {{ $roomName }}
+                        </option>
+                    @endfor
                 </select>
             </div>
 

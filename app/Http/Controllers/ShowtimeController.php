@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Movie;
-use App\Models\Theater;
 use App\Models\TicketPrice;
 use App\Models\Showtime;
 use Illuminate\Http\Request;
+
 class ShowtimeController extends Controller
 {
     /**
@@ -23,10 +23,9 @@ class ShowtimeController extends Controller
     public function create()
     {
         $movies = Movie::all();
-        $theaters = Theater::all();
-        $prices = TicketPrice::all();
+        $prices = TicketPrice::with('theater')->orderBy('price')->get();
 
-        return view('admin.showtimes.create', compact('movies', 'theaters', 'prices'));
+        return view('admin.showtimes.create', compact('movies', 'prices'));
     }
 
     /**
@@ -36,15 +35,15 @@ class ShowtimeController extends Controller
     {
         $request->validate([
             'movie_id' => 'required|exists:movies,id',
-            'theater_id' => 'required|exists:theaters,id',
             'ticket_price_id' => 'required|exists:ticket_prices,id',
             'time' => 'required|date',
-            'room' => 'nullable|string|max:50',
+            'room' => 'required|string|max:255',
         ]);
 
+        $ticketPrice = TicketPrice::findOrFail($request->ticket_price_id);
         Showtime::create([
             'movie_id' => $request->movie_id,
-            'theater_id' => $request->theater_id,
+            'theater_id' => $ticketPrice->theater_id,
             'ticket_price_id' => $request->ticket_price_id,
             'time' => $request->time,
             'room' => $request->room,

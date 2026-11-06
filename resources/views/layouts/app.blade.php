@@ -14,10 +14,9 @@
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 </head>
 <body class="font-sans antialiased bg-gray-900 text-white">
-    {{-- NAVIGATION --}}
-    <div>
+    @unless (request()->routeIs('admin.users.*'))
         @include('layouts.navigation')
-    </div>
+    @endunless
 
     {{-- MAIN CONTENT --}}
     <main>

@@ -4,8 +4,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Showtime;
 use App\Models\Movie;
-use App\Models\Theater;
 use App\Models\TicketPrice;
+
 class ShowtimeAdminController extends Controller
 {
     public function index()
@@ -16,25 +16,21 @@ class ShowtimeAdminController extends Controller
     public function create()
     {
         $movies = Movie::all();
+        $prices = TicketPrice::with('theater')->orderBy('price')->get();
 
-        $theaters = Theater::all();
-
-        $prices = TicketPrice::orderBy('price', 'asc')->get();
-
-        return view('admin.showtimes.create', compact('movies', 'theaters', 'prices'));
+        return view('admin.showtimes.create', compact('movies', 'prices'));
     }
     public function store(Request $request)
     {
-        // 1. Cấu hình kiểm tra dữ liệu đầu vào (Validate)
         $validated = $request->validate([
             'movie_id'        => 'required|exists:movies,id',
-            'theater_name'    => 'required|string|max:255',
-            'ticket_price'    => 'required|numeric|min:0',
+            'ticket_price_id' => 'required|exists:ticket_prices,id',
             'room'            => 'required|string|max:255',
             'time'            => 'required|date',
         ]);
 
-        // 2. Lưu trực tiếp mảng đã được kiểm tra tính hợp lệ vào CSDL
+        $ticketPrice = TicketPrice::findOrFail($validated['ticket_price_id']);
+        $validated['theater_id'] = $ticketPrice->theater_id;
         Showtime::create($validated);
 
         return redirect()->route('admin.showtimes.index')
@@ -45,29 +41,23 @@ class ShowtimeAdminController extends Controller
     {
         $showtime = Showtime::findOrFail($id);
         $movies = Movie::all();
-
-        // Bỏ load dữ liệu bảng phụ, chỉ truyền dữ liệu suất chiếu hiện tại để sửa
-        return view('admin.showtimes.edit', compact('showtime', 'movies'));
+        $prices = TicketPrice::with('theater')->orderBy('price')->get();
+        return view('admin.showtimes.edit', compact('showtime', 'movies', 'prices'));
     }
 
     public function update(Request $request, $id)
     {
-        // Cấu hình validate tương tự hàm store khi bấm cập nhật
-        $request->validate([
+        $validated = $request->validate([
             'movie_id'        => 'required|exists:movies,id',
-            'theater_name'    => 'required|string|max:255',
-            'ticket_price'    => 'required|numeric|min:0',
+            'ticket_price_id' => 'required|exists:ticket_prices,id',
             'room'            => 'required|string|max:255',
             'time'            => 'required|date',
         ]);
 
         $showtime = Showtime::findOrFail($id);
-        $showtime->movie_id     = $request->movie_id;
-        $showtime->theater_name = $request->theater_name;
-        $showtime->ticket_price = $request->ticket_price;
-        $showtime->room         = $request->room;
-        $showtime->time         = $request->time;
-        $showtime->save();
+        $ticketPrice = TicketPrice::findOrFail($validated['ticket_price_id']);
+        $validated['theater_id'] = $ticketPrice->theater_id;
+        $showtime->update($validated);
 
         return redirect()->route('admin.showtimes.index')
             ->with('success', '✅ Cập nhật thông tin suất chiếu thành công!');

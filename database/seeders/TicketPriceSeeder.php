@@ -19,6 +19,9 @@ class TicketPriceSeeder extends Seeder
             ['theater_id' => 4, 'type' => '2D', 'price' => 70000],
             ['theater_id' => 4, 'type' => '3D', 'price' => 85000],
             ['theater_id' => 5, 'type' => '4DX', 'price' => 160000],
+            ['theater_id' => 6, 'type' => '2D', 'price' => 85000],
+            ['theater_id' => 7, 'type' => '2D', 'price' => 80000],
+            ['theater_id' => 8, 'type' => '2D', 'price' => 80000],
         ]);
     }
 }

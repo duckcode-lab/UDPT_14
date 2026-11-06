@@ -1,17 +1,17 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\BannerAdminController;
 use App\Http\Controllers\Admin\MovieAdminController;
 use App\Http\Controllers\Admin\ShowtimeAdminController;
-use App\Http\Controllers\MovieController;
-use App\Http\Controllers\BookingController;
-use App\Http\Controllers\ShowtimeController;
-use App\Http\Controllers\CommentController;
-use App\Http\Controllers\Admin\BannerAdminController;
+use App\Http\Controllers\Admin\UserAdminController;
 use App\Http\Controllers\Auth\RegisteredUserController;
-
+use App\Http\Controllers\BookingController;
+use App\Http\Controllers\CommentController;
+use App\Http\Controllers\MovieController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ShowtimeController;
+use Illuminate\Support\Facades\Route;
 
 // KHÁCH (Chưa đăng nhập)
 Route::get('/', [MovieController::class, 'index'])->name('home');
@@ -49,6 +49,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/showtimes/create', [ShowtimeController::class, 'create'])->name('showtimes.create.custom');
     Route::post('/showtimes/store', [ShowtimeController::class, 'store'])->name('showtimes.store.custom');
     Route::resource('banners', BannerAdminController::class);
+    Route::resource('users', UserAdminController::class)->except(['show']);
     Route::get('/bookings', [BookingController::class, 'index'])->name('bookings.index');
     Route::delete('/admin/bookings/{id}', [BookingController::class, 'adminDestroy'])->name('admin.bookings.destroy');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -61,4 +62,4 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/bookings/{id}', [BookingController::class, 'adminDestroy'])->name('bookings.destroy');
 });
 
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';

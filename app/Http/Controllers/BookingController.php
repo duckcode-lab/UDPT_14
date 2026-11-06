@@ -58,7 +58,7 @@ class BookingController extends Controller
         }
 
         $seatCount = count($seats);
-        $singlePrice = $showtime->ticket_price ?? ($showtime->ticketPrice->price ?? 0);
+        $singlePrice = $showtime->ticketPrice->price;
         $totalPrice = $seatCount * $singlePrice;
 
         $ticket = Booking::create([

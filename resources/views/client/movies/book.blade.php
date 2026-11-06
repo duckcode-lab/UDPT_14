@@ -41,10 +41,10 @@
                 @foreach($showtimes as $showtime)
                     <div class="showtime-btn bg-gray-800 p-4 rounded-lg border border-gray-700 hover:border-yellow-400 hover:bg-gray-700 cursor-pointer transition duration-200"
                          data-id="{{ $showtime->id }}">
-                        <h3 class="font-bold text-lg">{{ $showtime->theater_name ?? ($showtime->theater->name ?? 'Không rõ rạp') }}</h3>
+                        <h3 class="font-bold text-lg">{{ $showtime->theater->name }}</h3>
                         <p>Phòng: <span class="font-semibold">{{ $showtime->room }}</span></p>
                         <p>Giờ chiếu: <span class="text-yellow-400">{{ \Carbon\Carbon::parse($showtime->time)->format('H:i d/m/Y') }}</span></p>
-                        <p>Giá vé: <span class="text-green-400">{{ isset($showtime->ticket_price) ? number_format($showtime->ticket_price) : ($showtime->ticketPrice ? number_format($showtime->ticketPrice->price) : '0') }} VNĐ</span> </p>
+                        <p>Giá vé: <span class="text-green-400">{{ number_format($showtime->ticketPrice->price) }} VNĐ</span> </p>
                     </div>
                 @endforeach
             </div>
