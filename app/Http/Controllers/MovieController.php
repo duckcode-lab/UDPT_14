@@ -23,7 +23,7 @@ class MovieController extends Controller
         $monthlyMovies = Movie::select(
             'movies.id',
             'movies.title',
-            DB::raw('MAX(movies.poster) as poster'),
+            DB::raw('MAX(movies.photo) as photo'),
             DB::raw('COUNT(bookings.id) as total_tickets')
         )
         ->join('showtimes', 'showtimes.movie_id', '=', 'movies.id')

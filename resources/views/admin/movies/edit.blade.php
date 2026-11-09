@@ -31,13 +31,19 @@
 
         <label class="block text-white">Ảnh hiện tại:</label>
         @if($movie->photo)
-            <img src="{{ asset('storage/'.$movie->photo) }}" class="w-48 mb-2 rounded border border-gray-700">
+            <img src="{{ $movie->photo_url }}" alt="{{ $movie->title }}" class="w-48 mb-2 rounded border border-gray-700">
         @else
             <p class="text-gray-400 italic mb-2">Chưa có post</p>
         @endif
 
-        <label class="block text-white">Thay ảnh mới:</label>
+        <label for="photo_url" class="block text-white">Link poster mới (để trống để giữ ảnh hiện tại):</label>
+        <input type="url" name="photo_url" id="photo_url" value="{{ old('photo_url', $movie->remote_photo_url) }}"
+            placeholder="https://example.com/poster.jpg" class="block w-full p-2 text-black rounded">
+        @error('photo_url') <p class="text-red-400">{{ $message }}</p> @enderror
+
+        <label class="block text-white">Hoặc tải ảnh mới từ máy:</label>
         <input type="file" name="photo" class="block w-full text-white" accept="image/*">
+        @error('photo') <p class="text-red-400">{{ $message }}</p> @enderror
 
         <button class="bg-yellow-500 hover:bg-yellow-600 px-4 py-2 rounded">Cập nhật phim</button>
     </form>

@@ -7,6 +7,7 @@ use App\Models\Genre;
 use App\Models\Movie;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class MovieAdminController extends Controller
 {
@@ -30,6 +31,7 @@ class MovieAdminController extends Controller
             'duration' => 'required|numeric|min:1',
             'genres' => 'nullable|string',
             'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'photo_url' => 'nullable|url:http,https|max:255',
             'trailer' => 'nullable|string',
             'release_date' => 'nullable|date',
             'status' => 'nullable|string|max:50',
@@ -44,10 +46,11 @@ class MovieAdminController extends Controller
             );
         }
 
-        // upload ảnh
+        $validated['photo'] = $validated['photo_url'] ?? null;
         if ($request->hasFile('photo')) {
             $validated['photo'] = $request->file('photo')->store('uploads/movies', 'public');
         }
+        unset($validated['photo_url']);
 
         // tạo movie
         $movie = Movie::create($validated);
@@ -89,6 +92,7 @@ class MovieAdminController extends Controller
             'duration' => 'required|integer|min:1',
             'genres' => 'nullable|string',
             'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'photo_url' => 'nullable|url:http,https|max:255',
             'trailer' => 'nullable|string|max:255',
             'release_date' => 'nullable|date',
             'status' => 'nullable|string|max:50',
@@ -101,12 +105,16 @@ class MovieAdminController extends Controller
             }
         }
 
-        if ($request->hasFile('photo')) {
-            if ($movie->photo && Storage::disk('public')->exists($movie->photo)) {
+        if ($request->hasFile('photo') || $request->filled('photo_url')) {
+            if ($movie->photo && !Str::startsWith($movie->photo, ['http://', 'https://'])
+                && Storage::disk('public')->exists($movie->photo)) {
                 Storage::disk('public')->delete($movie->photo);
             }
-            $validated['photo'] = $request->file('photo')->store('uploads/movies', 'public');
+            $validated['photo'] = $request->hasFile('photo')
+                ? $request->file('photo')->store('uploads/movies', 'public')
+                : $validated['photo_url'];
         }
+        unset($validated['photo_url']);
 
         $movie->update($validated);
 
@@ -133,7 +141,8 @@ class MovieAdminController extends Controller
     public function destroy(Movie $movie)
     {
 
-        if ($movie->photo && Storage::disk('public')->exists($movie->photo)) {
+        if ($movie->photo && !Str::startsWith($movie->photo, ['http://', 'https://'])
+            && Storage::disk('public')->exists($movie->photo)) {
             Storage::disk('public')->delete($movie->photo);
         }
 

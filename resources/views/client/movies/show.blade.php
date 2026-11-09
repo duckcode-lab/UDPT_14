@@ -10,14 +10,9 @@
         <div class="flex flex-row items-start justify-center gap-3 flex-wrap md:flex-nowrap">
 
             <div class="w-full md:w-1/3 flex justify-center px-2">
-                @php
-                    $photoPath = Str::startsWith($movie->photo, 'uploads/')
-                        ? asset('storage/' . $movie->photo)
-                        : asset($movie->photo);
-                @endphp
                 @if($movie->photo)
                     <a href="{{ route('movies.show', $movie->id) }}">
-                        <img src="{{ $photoPath }}"
+                        <img src="{{ $movie->photo_url }}"
                             alt="{{ $movie->title }}"
                             class="w-full object-cover" style="height: 400px">
                     </a>

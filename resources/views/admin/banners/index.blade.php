@@ -33,7 +33,7 @@
                     <tr class="border-t border-gray-700">
                         <td class="p-3">
                             @if($banner->image)
-                                <img src="{{ asset('storage/' . $banner->image) }}" alt="Banner" class="h-24 mx-auto rounded">
+                                <img src="{{ $banner->image_url }}" alt="Banner" class="h-24 mx-auto rounded">
                             @else
                                 <span class="text-gray-400 italic">Không có ảnh</span>
                             @endif

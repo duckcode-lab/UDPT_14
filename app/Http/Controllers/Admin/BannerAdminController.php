@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Banner;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class BannerAdminController extends Controller
 {
@@ -26,12 +27,16 @@ class BannerAdminController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'link' => 'nullable|string|max:255',
-            'image' => 'required|image|mimes:jpg,jpeg,png,webp|max:4096',
+            'image' => 'required_without:image_url|nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+            'image_url' => 'required_without:image|nullable|url:http,https|max:255',
         ]);
 
         if ($request->hasFile('image')) {
             $validated['image'] = $request->file('image')->store('uploads/banners', 'public');
+        } else {
+            $validated['image'] = $validated['image_url'];
         }
+        unset($validated['image_url']);
 
         Banner::create($validated);
         return redirect()->route('admin.banners.index')->with('success', 'Thêm banner thành công!');
@@ -49,14 +54,19 @@ class BannerAdminController extends Controller
             'description' => 'nullable|string',
             'link' => 'nullable|string|max:255',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+            'image_url' => 'nullable|url:http,https|max:255',
         ]);
 
-        if ($request->hasFile('image')) {
-            if ($banner->image && Storage::disk('public')->exists($banner->image)) {
+        if ($request->hasFile('image') || $request->filled('image_url')) {
+            if ($banner->image && !Str::startsWith($banner->image, ['http://', 'https://'])
+                && Storage::disk('public')->exists($banner->image)) {
                 Storage::disk('public')->delete($banner->image);
             }
-            $validated['image'] = $request->file('image')->store('uploads/banners', 'public');
+            $validated['image'] = $request->hasFile('image')
+                ? $request->file('image')->store('uploads/banners', 'public')
+                : $validated['image_url'];
         }
+        unset($validated['image_url']);
 
         $banner->update($validated);
         return redirect()->route('admin.banners.index')->with('success', 'Cập nhật banner thành công!');
@@ -64,7 +74,8 @@ class BannerAdminController extends Controller
 
     public function destroy(Banner $banner)
     {
-        if ($banner->image && Storage::disk('public')->exists($banner->image)) {
+        if ($banner->image && !Str::startsWith($banner->image, ['http://', 'https://'])
+            && Storage::disk('public')->exists($banner->image)) {
             Storage::disk('public')->delete($banner->image);
         }
 

@@ -45,12 +45,21 @@
                 <label for="image" class="block text-yellow-300 font-semibold mb-2">🖼️ Hình ảnh banner</label>
                 @if ($banner->image)
                     <div class="mb-3 text-center">
-                        <img src="{{ asset('storage/' . $banner->image) }}"
+                        <img src="{{ $banner->image_url }}"
                              alt="Banner hiện tại"
                              class="rounded-lg shadow-md w-full max-h-72 object-cover mx-auto">
                         <p class="text-gray-400 text-sm mt-2 italic">Ảnh hiện tại</p>
                     </div>
                 @endif
+                <label for="image_url" class="block text-yellow-300 font-semibold mb-2">Hoặc nhập link ảnh mới</label>
+                <input type="url" name="image_url" id="image_url"
+                       value="{{ old('image_url', $banner->remote_image_url) }}"
+                       placeholder="https://example.com/banner.jpg"
+                       class="w-full p-3 mb-3 rounded-md bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-400">
+                @error('image_url')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
+                <label for="image" class="block text-yellow-300 font-semibold mb-2">Hoặc tải ảnh mới từ máy</label>
                 <input type="file" name="image" id="image"
                        class="w-full p-2 rounded-md bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-400">
                 @error('image')

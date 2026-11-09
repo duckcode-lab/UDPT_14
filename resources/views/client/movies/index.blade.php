@@ -23,7 +23,7 @@
 
                             <a href="{{ $banner->link ?? route('movies.show', $banner->movie_id ?? 0) }}" class="block w-full h-[500px]">
                                 <div class="w-full h-full flex justify-center items-center bg-black">
-                                    <img src="{{ asset('storage/' . $banner->image) }}"
+                                    <img src="{{ $banner->image_url }}"
                                         alt="{{ $banner->title }}"
                                         class="transition-transform duration-500 group-hover:scale-110 opacity-100" style="width: 1200px;height: 570px; position: relative;top:35px">
                                 </div>
@@ -60,14 +60,9 @@
                 @foreach($weeklyMovies as $movie)
                     <div class="bg-gray-900 rounded-lg shadow-lg hover:scale-105 transition duration-300 overflow-hidden">
                         <a href="{{ route('movies.show', $movie->id) }}">
-                            @php
-                                $photoPath = Str::startsWith($movie->photo, 'uploads/')
-                                    ? asset('storage/' . $movie->photo)
-                                    : asset($movie->photo);
-                            @endphp
                             @if($movie->photo)
                                 <a href="{{ route('movies.show', $movie->id) }}">
-                                    <img src="{{ $photoPath }}"
+                                    <img src="{{ $movie->photo_url }}"
                                         alt="{{ $movie->title }}"
                                         class="w-full object-cover" style="height: 400px">
                                 </a>
@@ -95,17 +90,11 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         @foreach($monthlyMovies as $movie)
 
-            @php
-                $photoPath = Str::startsWith($movie->photo, 'uploads/')
-                    ? asset('storage/' . $movie->photo)
-                    : asset($movie->photo);
-            @endphp
-
             <a href="{{ route('movies.show', $movie->id) }}"
                class="block group relative bg-gray-900 rounded-xl shadow-lg overflow-hidden transform transition duration-300 hover:scale-[1.05]">
 
                 {{-- Ảnh --}}
-                <img src="{{ $photoPath }}"
+                <img src="{{ $movie->photo_url }}"
                      alt="{{ $movie->title }}"
                      class="transition duration-500 group-hover:scale-110">
 
@@ -217,4 +206,3 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-

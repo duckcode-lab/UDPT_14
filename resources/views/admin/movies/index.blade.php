@@ -29,7 +29,7 @@
                 <tr class="border-t border-gray-700 hover:bg-gray-800 transition">
                     <td class="p-3">
                         @if($movie->photo)
-                            <img src="{{ asset('storage/' . $movie->photo) }}" alt="{{ $movie->title }}" class="w-20 h-auto rounded">
+                            <img src="{{ $movie->photo_url }}" alt="{{ $movie->title }}" class="w-20 h-auto rounded">
                         @else
                             <span class="text-gray-400 italic">Không có poster</span>
                         @endif

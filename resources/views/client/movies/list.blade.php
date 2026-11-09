@@ -19,14 +19,9 @@
             @foreach($movies as $movie)
 
                 <div class="bg-gray-900 border border-gray-700 rounded-lg overflow-hidden shadow-md hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">
-                    @php
-                        $photoPath = Str::startsWith($movie->photo, 'uploads/')
-                            ? asset('storage/' . $movie->photo)
-                            : asset($movie->photo);
-                                @endphp
-                                @if($movie->photo)
+                    @if($movie->photo)
                         <a href="{{ route('movies.show', $movie->id) }}">
-                            <img src="{{ $photoPath }}"
+                            <img src="{{ $movie->photo_url }}"
                                 alt="{{ $movie->title }}"
                                 class="w-full object-cover" style="height: 400px">
                         </a>
@@ -122,4 +117,3 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-

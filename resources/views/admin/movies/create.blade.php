@@ -25,8 +25,14 @@
         <label class="block text-white">Trailer:</label>
         <input type="text" name="trailer" class="block w-full p-2 text-black rounded">
 
-        <label class="block text-white">Poster phim:</label>
+        <label for="photo_url" class="block text-white">Link poster phim:</label>
+        <input type="url" name="photo_url" id="photo_url" value="{{ old('photo_url') }}"
+            placeholder="https://example.com/poster.jpg" class="block w-full p-2 text-black rounded">
+        @error('photo_url') <p class="text-red-400">{{ $message }}</p> @enderror
+
+        <label class="block text-white">Hoặc tải poster từ máy:</label>
         <input type="file" name="photo" class="block w-full text-white" accept="image/*">
+        @error('photo') <p class="text-red-400">{{ $message }}</p> @enderror
 
         <button class="bg-green-500 text-white hover:bg-green-600 px-4 py-2 rounded">Lưu phim</button>
     </form>
