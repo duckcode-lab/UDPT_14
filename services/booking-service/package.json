@@ -1,0 +1,17 @@
+{
+  "name": "booking-service",
+  "version": "1.0.0",
+  "description": "Booking Microservice with Redis Distributed Lock & Outbox Pattern",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "mysql2": "^3.9.7",
+    "ioredis": "^5.4.1",
+    "uuid": "^9.0.1",
+    "dotenv": "^16.4.5",
+    "cors": "^2.8.5"
+  }
+}
