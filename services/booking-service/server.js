@@ -7,6 +7,7 @@ const protoLoader = require('@grpc/proto-loader');
 const { Kafka } = require('kafkajs');
 const CircuitBreaker = require('opossum');
 const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
 
@@ -15,6 +16,7 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 8003;
+const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_jwt_key_cinema_distributed';
 const SHOW_GRPC_HOST = process.env.SHOW_GRPC_HOST || 'show-service:50051';
 const PAYMENT_GRPC_HOST = process.env.PAYMENT_GRPC_HOST || 'payment-service:50052';
 const KAFKA_BROKER = process.env.KAFKA_BROKER || 'kafka:9092';
@@ -193,6 +195,27 @@ showBreaker.on('close', () => console.log('[Circuit Breaker] SHOW SERVICE CIRCUI
 paymentBreaker.on('open', () => console.warn('[Circuit Breaker] PAYMENT SERVICE CIRCUIT OPENED!'));
 paymentBreaker.on('close', () => console.log('[Circuit Breaker] PAYMENT SERVICE CIRCUIT CLOSED (NORMAL)'));
 
+// Helper: Giải mã và xác thực JWT Bearer Token bằng crypto native (HS256)
+function verifyToken(req) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (!token) return null;
+    try {
+        const parts = token.split('.');
+        if (parts.length !== 3) return null;
+        const [headerB64, payloadB64, sigB64] = parts;
+        const expectedSig = crypto.createHmac('sha256', JWT_SECRET)
+            .update(`${headerB64}.${payloadB64}`)
+            .digest('base64url');
+        if (expectedSig !== sigB64) return null;
+        const payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
+        if (payload.exp && Date.now() >= payload.exp * 1000) return null;
+        return payload;
+    } catch (e) {
+        return null;
+    }
+}
+
 // =========================================================================
 // REST API
 // =========================================================================
@@ -239,17 +262,63 @@ app.get('/health', async (req, res) => {
     });
 });
 
-// Đặt vé / Giữ chỗ
-app.post('/book', async (req, res) => {
-    const { showtime_id, seat_code, user_id, user_email, payment_method } = req.body;
+// Lấy danh sách ghế đã bán hoặc đang bị khóa theo suất chiếu
+app.get('/showtimes/:id/occupied-seats', async (req, res) => {
+    try {
+        const showtimeId = req.params.id;
+        // 1. Ghế đã bán thành công trong DB
+        const [rows] = await pool.query(
+            'SELECT seat_code FROM bookings WHERE showtime_id = ? AND status = "CONFIRMED"',
+            [showtimeId]
+        );
+        const bookedSeats = rows.map(r => r.seat_code.toUpperCase());
 
-    if (!showtime_id || !seat_code || !user_email) {
+        // 2. Ghế đang có lock trong Redis
+        const lockPattern = `lock:show:${showtimeId}:seat:*`;
+        const lockKeys = await redis.keys(lockPattern);
+        const lockedSeats = lockKeys.map(k => k.split(':').pop().toUpperCase());
+
+        const occupied = Array.from(new Set([...bookedSeats, ...lockedSeats]));
+
+        res.json({
+            success: true,
+            showtime_id: parseInt(showtimeId),
+            count: occupied.length,
+            occupied_seats: occupied,
+            booked_seats: bookedSeats,
+            locked_seats: lockedSeats
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Đặt vé / Giữ chỗ (Hỗ trợ JWT Authentication & Idempotency-Key)
+app.post('/book', async (req, res) => {
+    const userPayload = verifyToken(req);
+    const { showtime_id, seat_code, payment_method } = req.body;
+
+    const currentUserId = userPayload ? userPayload.id : (req.body.user_id || 1);
+    const currentUserEmail = userPayload ? userPayload.email : (req.body.user_email || 'khachhang@gmail.com');
+
+    if (!showtime_id || !seat_code || !currentUserEmail) {
         return res.status(400).json({ error: 'Thiếu thông tin bắt buộc: showtime_id, seat_code, user_email' });
+    }
+
+    // 0. KIỂM TRA IDEMPOTENCY KEY (Chống trùng lặp giao dịch khi retry)
+    const idempotencyKey = req.headers['idempotency-key'];
+    if (idempotencyKey) {
+        try {
+            const cachedRes = await redis.get(`idempotency:${idempotencyKey}`);
+            if (cachedRes) {
+                console.log(`[Booking Service] Idempotency Cache HIT cho key: ${idempotencyKey}`);
+                return res.status(200).json(JSON.parse(cachedRes));
+            }
+        } catch (e) {}
     }
 
     const cleanSeat = seat_code.trim().toUpperCase();
     const lockKey = `lock:show:${showtime_id}:seat:${cleanSeat}`;
-    const currentUserId = user_id || 1;
     let lockAcquired = false;
 
     try {
@@ -303,14 +372,14 @@ app.post('/book', async (req, res) => {
                 `INSERT INTO bookings (id, user_id, user_email, showtime_id, seat_code, price, movie_title, theater_name, room, status) 
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, "CONFIRMED")
                  ON DUPLICATE KEY UPDATE status="CONFIRMED", price=VALUES(price)`,
-                [bookingId, currentUserId, user_email, showtime_id, cleanSeat, price, seatCheck.movie_title, seatCheck.theater_name, seatCheck.room]
+                [bookingId, currentUserId, currentUserEmail, showtime_id, cleanSeat, price, seatCheck.movie_title, seatCheck.theater_name, seatCheck.room]
             );
 
             const outboxId = uuidv4();
             const eventPayload = {
                 booking_id: bookingId,
                 user_id: currentUserId,
-                user_email,
+                user_email: currentUserEmail,
                 showtime_id,
                 seat_code: cleanSeat,
                 price,
@@ -344,7 +413,7 @@ app.post('/book', async (req, res) => {
 
             await redis.set(lockKey, 'SOLD', 'EX', 86400);
 
-            res.status(201).json({
+            const responseData = {
                 message: '🎟️ Đặt vé và thanh toán thành công!',
                 booking: {
                     id: bookingId,
@@ -356,7 +425,16 @@ app.post('/book', async (req, res) => {
                     status: 'CONFIRMED',
                     transaction_id: paymentResult.transaction_id
                 }
-            });
+            };
+
+            // Lưu cache Idempotency Key 24h
+            if (idempotencyKey) {
+                try {
+                    await redis.set(`idempotency:${idempotencyKey}`, JSON.stringify(responseData), 'EX', 86400);
+                } catch (e) {}
+            }
+
+            res.status(201).json(responseData);
         } catch (dbErr) {
             await connection.rollback();
             throw dbErr;
@@ -372,9 +450,11 @@ app.post('/book', async (req, res) => {
     }
 });
 
+// Tra cứu danh sách vé của người dùng (Xác thực JWT hoặc Header)
 app.get('/my-bookings', async (req, res) => {
     try {
-        const userId = req.headers['x-user-id'] || 1;
+        const userPayload = verifyToken(req);
+        const userId = userPayload ? userPayload.id : (req.headers['x-user-id'] || req.query.user_id || 1);
         const [rows] = await pool.query('SELECT * FROM bookings WHERE user_id = ? ORDER BY created_at DESC', [userId]);
         res.json({ success: true, count: rows.length, data: rows });
     } catch (err) {
@@ -392,10 +472,19 @@ app.get('/:id', async (req, res) => {
     }
 });
 
+// Hủy vé và giải phóng ghế trên Redis
 app.delete('/:id', async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM bookings WHERE id = ?', [req.params.id]);
-        if (rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy vé' });
+        const userPayload = verifyToken(req);
+        let query = 'SELECT * FROM bookings WHERE id = ?';
+        let params = [req.params.id];
+        if (userPayload && userPayload.role !== 'admin') {
+            query += ' AND user_id = ?';
+            params.push(userPayload.id);
+        }
+
+        const [rows] = await pool.query(query, params);
+        if (rows.length === 0) return res.status(404).json({ error: 'Không tìm thấy vé hoặc bạn không có quyền hủy vé này' });
 
         const booking = rows[0];
         await pool.query('UPDATE bookings SET status = "CANCELLED" WHERE id = ?', [req.params.id]);
@@ -403,7 +492,7 @@ app.delete('/:id', async (req, res) => {
         const lockKey = `lock:show:${booking.showtime_id}:seat:${booking.seat_code}`;
         await redis.del(lockKey);
 
-        res.json({ message: 'Hủy vé thành công, ghế đã được trả lại', booking_id: req.params.id });
+        res.json({ message: 'Hủy vé thành công, ghế đã được trả lại sơ đồ!', booking_id: req.params.id, seat_code: booking.seat_code });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
