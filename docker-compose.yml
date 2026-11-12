@@ -16,7 +16,6 @@ volumes:
 services:
   # =========================================================================
   # 1. HẠ TẦNG DỮ LIỆU RIÊNG BIỆT (DATABASE-PER-SERVICE PATTERN)
-  # Sử dụng MariaDB 10.11 tối ưu RAM cực thấp (~45MB/container) cho máy dev
   # =========================================================================
   auth-db:
     image: mariadb:10.11
@@ -130,7 +129,6 @@ services:
 
   # =========================================================================
   # 2. CACHE & DISTRIBUTED LOCK (REDIS)
-  # Phục vụ khóa ghế tạm thời chống Race Condition
   # =========================================================================
   redis:
     image: redis:7-alpine
@@ -145,8 +143,7 @@ services:
       - cinema-network
 
   # =========================================================================
-  # 3. MESSAGE BROKER - APACHE KAFKA (KRAFT MODE - NO ZOOKEEPER)
-  # Tiết kiệm RAM, chuẩn Apache Kafka 3.7 mới nhất
+  # 3. MESSAGE BROKER - APACHE KAFKA (KRAFT MODE)
   # =========================================================================
   kafka:
     image: apache/kafka:3.7.0
@@ -181,7 +178,6 @@ services:
     entrypoint: [ "/bin/sh", "-c" ]
     command: |
       "
-      # Chờ Kafka broker sẵn sàng
       echo 'Waiting for Kafka to be ready...'
       /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list
       while [ $$? -ne 0 ]; do
@@ -231,6 +227,7 @@ services:
     restart: always
     environment:
       PORT: 8002
+      GRPC_PORT: 50051
       DB_HOST: show-db
       DB_PORT: 3306
       DB_USER: show_user
@@ -238,6 +235,9 @@ services:
       DB_NAME: show_db
     ports:
       - "8002:8002"
+      - "50051:50051"
+    volumes:
+      - ./proto:/app/proto:ro
     depends_on:
       - show-db
     networks:
@@ -259,12 +259,18 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       KAFKA_BROKER: kafka:9092
+      SHOW_GRPC_HOST: show-service:50051
+      PAYMENT_GRPC_HOST: payment-service:50052
     ports:
       - "8003:8003"
+    volumes:
+      - ./proto:/app/proto:ro
     depends_on:
       - booking-db
       - redis
       - kafka
+      - show-service
+      - payment-service
     networks:
       - cinema-network
 
@@ -276,6 +282,7 @@ services:
     restart: always
     environment:
       PORT: 8004
+      GRPC_PORT: 50052
       DB_HOST: payment-db
       DB_PORT: 3306
       DB_USER: payment_user
@@ -284,6 +291,9 @@ services:
       KAFKA_BROKER: kafka:9092
     ports:
       - "8004:8004"
+      - "50052:50052"
+    volumes:
+      - ./proto:/app/proto:ro
     depends_on:
       - payment-db
       - kafka
@@ -313,8 +323,7 @@ services:
       - cinema-network
 
   # =========================================================================
-  # 5. NGINX API GATEWAY (SINGLE ENTRY POINT)
-  # Reverse Proxy, Load Balancing, Rate Limiting
+  # 5. NGINX API GATEWAY
   # =========================================================================
   api-gateway:
     image: nginx:alpine
@@ -325,6 +334,7 @@ services:
       - "8080:80"
     volumes:
       - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./gateway/html:/usr/share/nginx/html:ro
     depends_on:
       - auth-service
       - show-service

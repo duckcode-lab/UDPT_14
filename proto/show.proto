@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package show;
+
+service ShowService {
+    // Kiểm tra trạng thái và giá của ghế
+    rpc CheckSeatAvailability (CheckSeatRequest) returns (CheckSeatResponse);
+    // Lấy thông tin chi tiết suất chiếu
+    rpc GetShowDetails (ShowDetailsRequest) returns (ShowDetailsResponse);
+}
+
+message CheckSeatRequest {
+    int32 showtime_id = 1;
+    string seat_code = 2;
+}
+
+message CheckSeatResponse {
+    bool available = 1;
+    int32 showtime_id = 2;
+    string seat_code = 3;
+    int32 price = 4;
+    string movie_title = 5;
+    string theater_name = 6;
+    string room = 7;
+    string show_time = 8;
+    string message = 9;
+}
+
+message ShowDetailsRequest {
+    int32 showtime_id = 1;
+}
+
+message ShowDetailsResponse {
+    int32 id = 1;
+    string movie_title = 2;
+    string theater_name = 3;
+    string room = 4;
+    string show_time = 5;
+    int32 price = 6;
+}

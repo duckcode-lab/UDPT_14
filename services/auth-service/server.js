@@ -28,7 +28,8 @@ let pool;
 async function initDB() {
     try {
         pool = mysql.createPool(dbConfig);
-        // Tạo bảng users nếu chưa có
+        
+        // 1. Bảng users với role RBAC
         await pool.query(`
             CREATE TABLE IF NOT EXISTS users (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -40,7 +41,22 @@ async function initDB() {
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         `);
-        console.log('[Auth Service] Database connected and schema initialized.');
+
+        // 2. Tạo tài khoản mẫu mặc định nếu chưa có (1 Admin, 1 User)
+        const [users] = await pool.query('SELECT COUNT(*) as count FROM users');
+        if (users[0].count === 0) {
+            const adminPass = await bcrypt.hash('Admin@123456', 10);
+            const userPass = await bcrypt.hash('User@123456', 10);
+
+            await pool.query(`
+                INSERT INTO users (name, email, password, role) VALUES 
+                ('Hệ thống Quản trị viên', 'admin@cinema.com', ?, 'admin'),
+                ('Khách hàng Thử nghiệm', 'user@cinema.com', ?, 'user');
+            `, [adminPass, userPass]);
+            console.log('[Auth Service] Seeded default admin (admin@cinema.com) and user (user@cinema.com)');
+        }
+
+        console.log('[Auth Service] Database connected and RBAC schema initialized.');
     } catch (err) {
         console.error('[Auth Service] DB Init Error (will retry):', err.message);
         setTimeout(initDB, 5000);
@@ -48,7 +64,39 @@ async function initDB() {
 }
 
 // ------------------------------------
-// Health Check
+// Middlewares Xác thực & Phân quyền (RBAC)
+// ------------------------------------
+function authenticateToken(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).json({ error: 'Truy cập bị từ chối: Thiếu JWT Bearer token' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.user = decoded;
+        next();
+    } catch (err) {
+        return res.status(403).json({ error: 'Token không hợp lệ hoặc đã hết hạn' });
+    }
+}
+
+function requireRole(allowedRoles) {
+    return (req, res, next) => {
+        if (!req.user || !allowedRoles.includes(req.user.role)) {
+            return res.status(403).json({ 
+                error: `Không có quyền truy cập: Yêu cầu vai trò [${allowedRoles.join(', ')}]`,
+                your_role: req.user ? req.user.role : 'none'
+            });
+        }
+        next();
+    };
+}
+
+// ------------------------------------
+// 1. Health Check
 // ------------------------------------
 app.get('/health', async (req, res) => {
     let dbStatus = 'DISCONNECTED';
@@ -71,7 +119,7 @@ app.get('/health', async (req, res) => {
 });
 
 // ------------------------------------
-// Đăng ký
+// 2. Đăng ký tài khoản
 // ------------------------------------
 app.post('/register', async (req, res) => {
     try {
@@ -87,7 +135,7 @@ app.post('/register', async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
         const [result] = await pool.query(
-            'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
+            'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, "user")',
             [name, email, hashedPassword]
         );
 
@@ -108,7 +156,7 @@ app.post('/register', async (req, res) => {
 });
 
 // ------------------------------------
-// Đăng nhập (Cấp phát JWT)
+// 3. Đăng nhập (Cấp phát JWT Token)
 // ------------------------------------
 app.post('/login', async (req, res) => {
     try {
@@ -145,7 +193,7 @@ app.post('/login', async (req, res) => {
 });
 
 // ------------------------------------
-// Xác thực JWT Token (Introspection)
+// 4. Xác thực Token (Introspection API)
 // ------------------------------------
 app.get('/verify', (req, res) => {
     const authHeader = req.headers['authorization'];
@@ -160,6 +208,48 @@ app.get('/verify', (req, res) => {
         res.json({ valid: true, user: decoded });
     } catch (err) {
         res.status(403).json({ valid: false, error: 'Token không hợp lệ hoặc đã hết hạn' });
+    }
+});
+
+// ------------------------------------
+// 5. Lấy Profile của User hiện tại (Yêu cầu JWT)
+// ------------------------------------
+app.get('/profile', authenticateToken, async (req, res) => {
+    try {
+        const [users] = await pool.query('SELECT id, name, email, role, created_at FROM users WHERE id = ?', [req.user.id]);
+        if (users.length === 0) return res.status(404).json({ error: 'Không tìm thấy người dùng' });
+        res.json({ success: true, profile: users[0] });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ------------------------------------
+// 6. Quản trị: Xem danh sách người dùng (Chỉ Admin)
+// ------------------------------------
+app.get('/users', authenticateToken, requireRole(['admin']), async (req, res) => {
+    try {
+        const [users] = await pool.query('SELECT id, name, email, role, created_at FROM users ORDER BY id DESC');
+        res.json({ success: true, count: users.length, users });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ------------------------------------
+// 7. Quản trị: Cập nhật phân quyền Role (Chỉ Admin)
+// ------------------------------------
+app.patch('/users/:id/role', authenticateToken, requireRole(['admin']), async (req, res) => {
+    try {
+        const { role } = req.body;
+        if (!['user', 'admin'].includes(role)) {
+            return res.status(400).json({ error: 'Vai trò không hợp lệ (chỉ chấp nhận "user" hoặc "admin")' });
+        }
+
+        await pool.query('UPDATE users SET role = ? WHERE id = ?', [role, req.params.id]);
+        res.json({ message: `Cập nhật quyền thành công cho người dùng #${req.params.id} sang vai trò: ${role}` });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 

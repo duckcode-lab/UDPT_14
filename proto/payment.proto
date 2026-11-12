@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package payment;
+
+service PaymentService {
+    // Xử lý thanh toán giả lập có Idempotency
+    rpc ProcessPayment (PaymentRequest) returns (PaymentResponse);
+    // Tra cứu trạng thái giao dịch
+    rpc GetPaymentStatus (PaymentStatusRequest) returns (PaymentResponse);
+}
+
+message PaymentRequest {
+    string booking_id = 1;
+    int32 user_id = 2;
+    int32 amount = 3;
+    string payment_method = 4;
+}
+
+message PaymentResponse {
+    bool success = 1;
+    string transaction_id = 2;
+    string booking_id = 3;
+    int32 amount = 4;
+    string status = 5;
+    string message = 6;
+    string created_at = 7;
+}
+
+message PaymentStatusRequest {
+    string booking_id = 1;
+}

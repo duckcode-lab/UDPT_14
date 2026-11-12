@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Đặt Vé Phân Tán - Cinema Distributed System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .seat { transition: all 0.2s ease-in-out; }
+        .seat:hover:not(.seat-sold) { transform: scale(1.1); }
+        .seat-selected { background-color: #eab308 !important; color: #000 !important; font-weight: bold; }
+        .seat-sold { background-color: #ef4444 !important; cursor: not-allowed !important; opacity: 0.6; }
+        .seat-vip { border: 2px solid #a855f7; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans">
+
+    <!-- Header Navigation -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-film text-yellow-500 text-2xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold bg-gradient-to-r from-yellow-400 to-amber-500 bg-clip-text text-transparent">
+                        CINEMA DISTRIBUTED SYSTEM
+                    </h1>
+                    <p class="text-xs text-slate-400">Kiến trúc Phân tán: Nginx • gRPC • Redis Lock • Kafka • Outbox</p>
+                </div>
+            </div>
+
+            <!-- System Badges -->
+            <div class="hidden md:flex items-center space-x-2 text-xs">
+                <span class="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    <i class="fa-solid fa-circle text-[8px] animate-pulse mr-1"></i> Gateway :80
+                </span>
+                <span class="px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                    gRPC :50051 / :50052
+                </span>
+                <span class="px-2.5 py-1 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">
+                    Redis Lock
+                </span>
+                <span class="px-2.5 py-1 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                    Kafka KRaft
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- CỘT 1 & 2: KHU VỰC CHỌN PHIM VÀ SƠ ĐỒ GHẾ -->
+        <div class="lg:col-span-2 space-y-6">
+            
+            <!-- Danh sách phim -->
+            <section class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                <h2 class="text-lg font-bold text-yellow-400 mb-3 flex items-center">
+                    <i class="fa-solid fa-ticket mr-2"></i> 1. CHỌN PHIM VÀ SUẤT CHIẾU (Show Service)
+                </h2>
+                <div id="movie-list" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="text-slate-400 text-sm">Đang tải danh sách phim...</div>
+                </div>
+            </section>
+
+            <!-- Sơ đồ rạp chiếu -->
+            <section class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-yellow-400 flex items-center">
+                        <i class="fa-solid fa-couch mr-2"></i> 2. SƠ ĐỒ GHẾ NGỒI (A1 - E8)
+                    </h2>
+                    <div class="text-xs space-x-3 text-slate-400">
+                        <span><span class="inline-block w-3 h-3 bg-slate-700 rounded mr-1"></span>Thường</span>
+                        <span><span class="inline-block w-3 h-3 bg-slate-700 border border-purple-500 rounded mr-1"></span>VIP (+15k)</span>
+                        <span><span class="inline-block w-3 h-3 bg-yellow-500 rounded mr-1"></span>Đang chọn</span>
+                        <span><span class="inline-block w-3 h-3 bg-red-500 rounded mr-1"></span>Đã bán / Khóa</span>
+                    </div>
+                </div>
+
+                <!-- Màn hình -->
+                <div class="w-full h-8 bg-gradient-to-b from-yellow-500/30 to-transparent border-t-2 border-yellow-500 rounded-t-xl text-center text-xs text-yellow-500 pt-1 tracking-widest font-semibold mb-6">
+                    MÀN HÌNH CHIẾU (SCREEN)
+                </div>
+
+                <!-- Ma trận ghế -->
+                <div id="seat-map" class="space-y-2.5 max-w-md mx-auto">
+                    <!-- Ghế được render động từ API -->
+                </div>
+            </section>
+        </div>
+
+        <!-- CỘT 3: THÔNG TIN THANH TOÁN & VÉ ĐIỆN TỬ -->
+        <div class="space-y-6">
+            
+            <!-- Box Đặt vé & Thanh toán -->
+            <section class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                <h2 class="text-lg font-bold text-yellow-400 mb-4 flex items-center">
+                    <i class="fa-solid fa-credit-card mr-2"></i> 3. ĐẶT VÉ & THANH TOÁN
+                </h2>
+
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between border-b border-slate-800 pb-2">
+                        <span class="text-slate-400">Phim chọn:</span>
+                        <span id="selected-movie-title" class="font-semibold text-white">Chưa chọn</span>
+                    </div>
+                    <div class="flex justify-between border-b border-slate-800 pb-2">
+                        <span class="text-slate-400">Ghế chọn:</span>
+                        <span id="selected-seat-code" class="font-bold text-yellow-400 text-base">Chưa chọn</span>
+                    </div>
+                    <div class="flex justify-between border-b border-slate-800 pb-2">
+                        <span class="text-slate-400">Giá vé:</span>
+                        <span id="selected-seat-price" class="font-bold text-emerald-400 text-base">0 VNĐ</span>
+                    </div>
+
+                    <div class="pt-2">
+                        <label class="block text-xs text-slate-400 mb-1">Email nhận vé:</label>
+                        <input id="user-email" type="email" value="khachhang@gmail.com" 
+                               class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Phương thức thanh toán:</label>
+                        <select id="payment-method" class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none">
+                            <option value="VNPAY">VNPAY (Giả lập qua gRPC)</option>
+                            <option value="MOMO">MOMO (Giả lập qua gRPC)</option>
+                            <option value="ZALOPAY">ZaloPay (Giả lập qua gRPC)</option>
+                        </select>
+                    </div>
+
+                    <button id="btn-book" onclick="submitBooking()" 
+                            class="w-full mt-4 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold py-3 rounded-lg shadow-lg shadow-yellow-500/20 transition flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-lock"></i>
+                        <span>XÁC NHẬN ĐẶT VÉ (REDIS LOCK)</span>
+                    </button>
+
+                    <!-- Nút Test Race Condition Demo -->
+                    <button onclick="demoRaceCondition()" 
+                            class="w-full mt-2 bg-slate-800 hover:bg-slate-700 text-rose-400 border border-rose-500/30 text-xs font-semibold py-2 rounded transition flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-bolt"></i>
+                        <span>Test Tranh chấp Ghế (Mô phỏng 2 người bấm cùng lúc)</span>
+                    </button>
+                </div>
+
+                <!-- Thông báo trạng thái -->
+                <div id="booking-alert" class="hidden mt-4 p-3 rounded-lg text-xs"></div>
+            </section>
+
+            <!-- Box Vé điện tử QR Code (Notification Service) -->
+            <section id="ticket-result-box" class="hidden bg-slate-900 border border-emerald-500/40 rounded-xl p-5 text-center">
+                <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 mb-2">
+                    <i class="fa-solid fa-check mr-1"></i> ĐẶT VÉ THÀNH CÔNG (KAFKA CONSUMED)
+                </span>
+                <h3 class="text-base font-bold text-white mb-1" id="ticket-movie">Avengers: Secret Wars</h3>
+                <p class="text-xs text-slate-400" id="ticket-detail">CGV Vincom • Phòng 01 (IMAX)</p>
+
+                <div class="my-4 bg-white p-3 rounded-lg inline-block shadow-inner">
+                    <img id="ticket-qr" src="" alt="Mã QR Vé" class="w-40 h-40 object-contain mx-auto">
+                </div>
+
+                <div class="text-xs text-slate-300 space-y-1">
+                    <p>Mã vé UUID: <span id="ticket-uuid" class="font-mono text-yellow-400"></span></p>
+                    <p>Ghế: <span id="ticket-seat" class="font-bold text-white"></span></p>
+                    <p>Mã GD: <span id="ticket-tx" class="font-mono text-slate-400 text-[10px]"></span></p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- JavaScript Xử lý Client -->
+    <script>
+        let currentShowtimeId = 1;
+        let selectedMovie = null;
+        let selectedSeat = null;
+
+        // 1. Tải danh sách phim
+        async function loadMovies() {
+            try {
+                const res = await fetch('/api/shows/movies');
+                const data = await res.json();
+                const container = document.getElementById('movie-list');
+                container.innerHTML = '';
+
+                data.data.forEach((m, idx) => {
+                    const card = document.createElement('div');
+                    card.className = `p-3 rounded-lg border cursor-pointer transition ${idx === 0 ? 'bg-slate-800 border-yellow-500' : 'bg-slate-950 border-slate-800 hover:border-slate-700'}`;
+                    card.innerHTML = `
+                        <div class="font-bold text-sm text-white">${m.title}</div>
+                        <div class="text-xs text-slate-400 mt-1"><i class="fa-regular fa-clock mr-1"></i>${m.duration} phút</div>
+                    `;
+                    card.onclick = () => selectMovie(m, card);
+                    container.appendChild(card);
+                    if (idx === 0) selectMovie(m, card);
+                });
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function selectMovie(movie, cardEl) {
+            selectedMovie = movie;
+            document.querySelectorAll('#movie-list > div').forEach(el => el.classList.remove('bg-slate-800', 'border-yellow-500'));
+            cardEl.classList.add('bg-slate-800', 'border-yellow-500');
+            document.getElementById('selected-movie-title').innerText = movie.title;
+            loadSeatMap(currentShowtimeId);
+        }
+
+        // 2. Tải sơ đồ ghế
+        async function loadSeatMap(showtimeId) {
+            try {
+                const res = await fetch(`/api/shows/showtimes/${showtimeId}/seats`);
+                const data = await res.json();
+                const container = document.getElementById('seat-map');
+                container.innerHTML = '';
+
+                const rows = ['A', 'B', 'C', 'D', 'E'];
+                rows.forEach(r => {
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = 'flex justify-between items-center gap-2';
+
+                    // Label hàng
+                    const label = document.createElement('span');
+                    label.className = 'w-6 text-xs text-slate-500 font-bold';
+                    label.innerText = r;
+                    rowDiv.appendChild(label);
+
+                    const seatsInRow = data.seats.filter(s => s.row === r);
+                    seatsInRow.forEach(seat => {
+                        const seatBtn = document.createElement('button');
+                        seatBtn.id = `seat-btn-${seat.code}`;
+                        seatBtn.className = `seat w-10 h-9 rounded text-xs font-semibold flex items-center justify-center ${seat.type === 'VIP' ? 'seat-vip bg-slate-800 text-purple-300' : 'bg-slate-800 text-slate-300'}`;
+                        seatBtn.innerText = seat.col;
+                        seatBtn.title = `Ghế ${seat.code} (${seat.type}) - ${seat.price.toLocaleString()} VNĐ`;
+                        seatBtn.onclick = () => selectSeat(seat);
+                        rowDiv.appendChild(seatBtn);
+                    });
+
+                    container.appendChild(rowDiv);
+                });
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function selectSeat(seat) {
+            selectedSeat = seat;
+            document.querySelectorAll('.seat').forEach(el => el.classList.remove('seat-selected'));
+            const btn = document.getElementById(`seat-btn-${seat.code}`);
+            if (btn) btn.classList.add('seat-selected');
+
+            document.getElementById('selected-seat-code').innerText = `${seat.code} (${seat.type})`;
+            document.getElementById('selected-seat-price').innerText = `${seat.price.toLocaleString()} VNĐ`;
+        }
+
+        // 3. Đặt vé
+        async function submitBooking() {
+            if (!selectedSeat) {
+                showAlert('Vui lòng chọn một ghế trên sơ đồ trước khi đặt!', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btn-book');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i><span>Đang xử lý phân tán...</span>';
+
+            const payload = {
+                showtime_id: currentShowtimeId,
+                seat_code: selectedSeat.code,
+                user_id: 1,
+                user_email: document.getElementById('user-email').value,
+                payment_method: document.getElementById('payment-method').value
+            };
+
+            try {
+                const res = await fetch('/api/bookings/book', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+
+                if (res.status === 201) {
+                    showAlert('🎟️ Đặt vé & Thanh toán thành công! Vé QR đã được sinh.', 'success');
+                    displayTicket(data.booking);
+
+                    // Đổi màu ghế sang đã bán
+                    const seatBtn = document.getElementById(`seat-btn-${selectedSeat.code}`);
+                    if (seatBtn) {
+                        seatBtn.className = 'seat w-10 h-9 rounded text-xs font-semibold flex items-center justify-center seat-sold';
+                        seatBtn.innerText = 'X';
+                    }
+                } else if (res.status === 409) {
+                    showAlert(`⚠️ ${data.error}`, 'error');
+                } else if (res.status === 429) {
+                    showAlert('⚠️ Bạn đang thao tác quá nhanh! Nginx Gateway Rate Limit đã chặn tạm thời.', 'error');
+                } else {
+                    showAlert(`Lỗi: ${data.error || 'Không xác định'}`, 'error');
+                }
+            } catch (err) {
+                showAlert('Lỗi kết nối tới Gateway!', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-lock"></i><span>XÁC NHẬN ĐẶT VÉ (REDIS LOCK)</span>';
+            }
+        }
+
+        // 4. Hiển thị vé điện tử kèm QR Code
+        async function displayTicket(booking) {
+            const box = document.getElementById('ticket-result-box');
+            document.getElementById('ticket-movie').innerText = booking.movie_title;
+            document.getElementById('ticket-detail').innerText = `${booking.theater_name} • ${booking.room}`;
+            document.getElementById('ticket-uuid').innerText = booking.id;
+            document.getElementById('ticket-seat').innerText = booking.seat_code;
+            document.getElementById('ticket-tx').innerText = booking.transaction_id;
+
+            // Lấy ảnh QR Code từ Notification Service
+            const qrRes = await fetch(`/api/notifications/tickets/${booking.id}/qr`);
+            const qrData = await qrRes.json();
+            document.getElementById('ticket-qr').src = qrData.qr_image_base64;
+
+            box.classList.remove('hidden');
+        }
+
+        // 5. Test Demo Tranh chấp Ghế (Mô phỏng Race Condition)
+        async function demoRaceCondition() {
+            if (!selectedSeat) {
+                showAlert('Hãy chọn 1 ghế bất kỳ để test tranh chấp đồng thời!', 'error');
+                return;
+            }
+
+            showAlert('🚀 Đang bắn 2 request đồng thời cho cùng 1 ghế...', 'info');
+
+            const p1 = fetch('/api/bookings/book', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ showtime_id: 1, seat_code: selectedSeat.code, user_id: 1, user_email: 'userA@gmail.com' })
+            });
+
+            const p2 = fetch('/api/bookings/book', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ showtime_id: 1, seat_code: selectedSeat.code, user_id: 2, user_email: 'userB@gmail.com' })
+            });
+
+            const [r1, r2] = await Promise.all([p1, p2]);
+            const d1 = await r1.json();
+            const d2 = await r2.json();
+
+            let msg = `Kết quả Test Tranh chấp Ghế [${selectedSeat.code}]:<br>`;
+            msg += `• User A: HTTP ${r1.status} (${r1.status === 201 ? 'THÀNH CÔNG' : d1.error})<br>`;
+            msg += `• User B: HTTP ${r2.status} (${r2.status === 201 ? 'THÀNH CÔNG' : d2.error})<br>`;
+            msg += `<b>=> Kết luận: Redis Lock đã chặn đứng Overbooking! Chỉ đúng 1 người mua được.</b>`;
+
+            showAlert(msg, 'success');
+        }
+
+        function showAlert(msg, type) {
+            const el = document.getElementById('booking-alert');
+            el.innerHTML = msg;
+            el.className = `mt-4 p-3 rounded-lg text-xs ${type === 'success' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : (type === 'error' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30')}`;
+            el.classList.remove('hidden');
+        }
+
+        // Chạy khởi động
+        loadMovies();
+    </script>
+</body>
+</html>

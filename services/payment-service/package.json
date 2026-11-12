@@ -1,7 +1,7 @@
 {
   "name": "payment-service",
   "version": "1.0.0",
-  "description": "Payment Microservice for Simulated Transactions & Idempotency",
+  "description": "Payment Microservice with gRPC Server & Idempotency",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -9,6 +9,8 @@
   "dependencies": {
     "express": "^4.19.2",
     "mysql2": "^3.9.7",
+    "@grpc/grpc-js": "^1.10.6",
+    "@grpc/proto-loader": "^0.7.12",
     "uuid": "^9.0.1",
     "dotenv": "^16.4.5",
     "cors": "^2.8.5"

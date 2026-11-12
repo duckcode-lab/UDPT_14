@@ -1,7 +1,7 @@
 {
   "name": "notification-service",
   "version": "1.0.0",
-  "description": "Notification Microservice with Kafka Consumer & QR Code Generator",
+  "description": "Notification Microservice with Kafka Consumer, QR Code & Email",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -9,6 +9,7 @@
   "dependencies": {
     "express": "^4.19.2",
     "mysql2": "^3.9.7",
+    "kafkajs": "^2.2.4",
     "qrcode": "^1.5.3",
     "nodemailer": "^6.9.13",
     "uuid": "^9.0.1",

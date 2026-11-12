@@ -1,7 +1,7 @@
 {
   "name": "booking-service",
   "version": "1.0.0",
-  "description": "Booking Microservice with Redis Distributed Lock & Outbox Pattern",
+  "description": "Booking Microservice with gRPC Client, Redis Distributed Lock, Kafka Producer & Opossum Circuit Breaker",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -10,6 +10,10 @@
     "express": "^4.19.2",
     "mysql2": "^3.9.7",
     "ioredis": "^5.4.1",
+    "@grpc/grpc-js": "^1.10.6",
+    "@grpc/proto-loader": "^0.7.12",
+    "kafkajs": "^2.2.4",
+    "opossum": "^8.1.3",
     "uuid": "^9.0.1",
     "dotenv": "^16.4.5",
     "cors": "^2.8.5"
