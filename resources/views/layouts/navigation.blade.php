@@ -1,17 +1,17 @@
 <nav class="bg-gray-900">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="w-full mx-auto px-4 sm:px-6 lg:px-10">
         <div class="flex justify-between h-16">
             {{-- Logo + Menu chính --}}
-            <div class="flex items-center space-x-10">
+            <div class="flex items-center min-w-0">
                 <a href="{{ route('home') }}" class="flex items-center">
                     <img src="{{ asset('uploads/movies/logo-b3a9e0cf-61b1-4be7-a2a5-e5017775b2b6-removebg-preview.png') }}"
                          alt="Cinema Ticket Logo"
                          class="h-8 w-8 bg-transparent">
-                    <span class="text-white font-semibold ml-2">Vịt Mê Film</span>
+                    <span class="text-white font-semibold ml-2 whitespace-nowrap">Vịt Mê Film</span>
                 </a>
 
                 {{-- Menu chính --}}
-                <div class="hidden sm:flex space-x-6">
+                <div class="hidden sm:flex items-center space-x-6 ml-10">
                     <x-nav-link :href="route('home')" :active="request()->routeIs('home')">
                         Trang chủ
                     </x-nav-link>

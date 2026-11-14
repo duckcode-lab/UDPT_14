@@ -1,0 +1,47 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8000"
+    environment:
+      APP_NAME: "Cinema Ticket"
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_KEY: "${APP_KEY:-}"
+      APP_URL: http://localhost:8000
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_DATABASE: cinema_ticket
+      DB_USERNAME: cinema_ticket
+      DB_PASSWORD: cinema_ticket_dev
+      CACHE_DRIVER: file
+      SESSION_DRIVER: file
+      QUEUE_CONNECTION: sync
+      FILESYSTEM_DISK: public
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - app_storage:/var/www/html/storage
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: cinema_ticket
+      MYSQL_USER: cinema_ticket
+      MYSQL_PASSWORD: cinema_ticket_dev
+      MYSQL_ROOT_PASSWORD: cinema_ticket_root_dev
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  app_storage:
+  mysql_data:

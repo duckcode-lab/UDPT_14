@@ -7,6 +7,28 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## Chạy dự án bằng Docker
+
+Cần cài Docker Desktop (Windows/macOS) hoặc Docker Engine cùng Docker Compose plugin (Linux).
+
+Từ thư mục dự án, chạy:
+
+```bash
+docker compose up --build -d
+docker compose exec app php artisan migrate --seed --force
+```
+
+Mở [http://localhost:8000](http://localhost:8000). Docker Compose tự tạo khóa ứng dụng trong volume lưu trữ nếu chưa đặt `APP_KEY`. Cơ sở dữ liệu MySQL và các tệp lưu trên Laravel public disk được lưu trong Docker volumes; dữ liệu mẫu được nạp bởi lệnh seed phía trên.
+
+Các lệnh thường dùng:
+
+```bash
+docker compose logs -f app
+docker compose down
+```
+
+`docker compose down` giữ dữ liệu. Để xóa cả dữ liệu MySQL và tệp tải lên, dùng `docker compose down -v`.
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

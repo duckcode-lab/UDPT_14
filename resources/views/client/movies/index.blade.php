@@ -15,42 +15,53 @@
             </div>
         </form>
         </div>
-        <section class="mb-12 relative" style="height: 80%">
-            <div class="swiper mySwiper">
-                <div class="swiper-wrapper">
-                    @foreach($banners as $banner)
-                        <div class="swiper-slide relative group overflow-hidden rounded-lg shadow-lg bg-black">
-
-                            <a href="{{ $banner->link ?? route('movies.show', $banner->movie_id ?? 0) }}" class="block w-full h-[500px]">
-                                <div class="w-full h-full flex justify-center items-center bg-black">
-                                    <img src="{{ $banner->image_url }}"
-                                        alt="{{ $banner->title }}"
-                                        class="transition-transform duration-500 group-hover:scale-110 opacity-100" style="width: 1200px;height: 570px; position: relative;top:35px">
-                                </div>
-                            </a>
-
-                            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-transparent opacity-0 group-hover:opacity-100 transition p-6">
-                                {{-- Tên phim --}}
-                                <h2 class="text-2xl font-bold text-yellow-400 mb-2">
-                                    {{ $banner->title }}
-                                </h2>
-
-                                {{-- Nút xem chi tiết --}}
-                                <a href="{{ $banner->link ?? route('movies.show', $banner->movie_id ?? 0) }}"
-                                class=" text-white font-semibold  py-2 rounded-md transition-all duration-200">
-                                    Xem chi tiết
-                                </a>
+        @if($banners->isNotEmpty())
+            <section class="mb-12" aria-label="Banner phim nổi bật">
+                <div class="swiper banner-slider relative overflow-hidden rounded-lg shadow-xl" style="height: auto;">
+                    <div class="swiper-wrapper" style="height: auto;">
+                        @foreach($banners as $banner)
+                            <div class="swiper-slide" style="height: auto;">
+                                @if($banner->link)
+                                    <a href="{{ $banner->link }}" class="banner-image-frame block" style="position: relative; display: block; width: 100%; aspect-ratio: 21 / 10; overflow: hidden;">
+                                        <img
+                                            src="{{ $banner->image_url }}"
+                                            alt="{{ $banner->title }}"
+                                            class="banner-image"
+                                            style="position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover;"
+                                            @if(!$loop->first) loading="lazy" @endif
+                                        >
+                                    </a>
+                                @else
+                                    <div class="banner-image-frame" style="position: relative; display: block; width: 100%; aspect-ratio: 21 / 10; overflow: hidden;">
+                                        <img
+                                            src="{{ $banner->image_url }}"
+                                            alt="{{ $banner->title }}"
+                                            class="banner-image"
+                                            style="position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover;"
+                                            @if(!$loop->first) loading="lazy" @endif
+                                        >
+                                    </div>
+                                @endif
                             </div>
-                        </div>
-                    @endforeach
-                </div>
+                        @endforeach
+                    </div>
 
-                {{-- Nút điều hướng Swiper --}}
-                <div class="swiper-button-next text-yellow-400"></div>
-                <div class="swiper-button-prev text-yellow-400"></div>
-                <div class="swiper-pagination"></div>
-            </div>
-        </section>
+                    @if($banners->count() > 1)
+                        <button
+                            type="button"
+                            class="banner-slider-prev swiper-button-prev !left-3 !h-10 !w-10 rounded-full bg-black/50 text-white transition hover:bg-yellow-400 hover:text-gray-900 sm:!left-5 sm:!h-12 sm:!w-12"
+                            aria-label="Banner trước"
+                        ></button>
+                        <button
+                            type="button"
+                            class="banner-slider-next swiper-button-next !right-3 !h-10 !w-10 rounded-full bg-black/50 text-white transition hover:bg-yellow-400 hover:text-gray-900 sm:!right-5 sm:!h-12 sm:!w-12"
+                            aria-label="Banner tiếp theo"
+                        ></button>
+                        <div class="banner-slider-pagination swiper-pagination"></div>
+                    @endif
+                </div>
+            </section>
+        @endif
 
         <section class="mb-12">
             <h2 class="text-3xl font-bold text-yellow-400 mb-6">
@@ -187,22 +198,25 @@ document.addEventListener('DOMContentLoaded', function() {
             suggestions.classList.add('hidden');
         }
     });
-    const swiper = new Swiper(".mySwiper", {
-        loop: true,
-        autoplay: {
-            delay: 5000,
-            disableOnInteraction: false,
-        },
-        pagination: {
-            el: ".swiper-pagination",
-            clickable: true,
-        },
-        navigation: {
-            nextEl: ".swiper-button-next",
-            prevEl: ".swiper-button-prev",
-        },
-        effect: "fade",
-        fadeEffect: { crossFade: true },
-    });
+    const bannerSlider = document.querySelector('.banner-slider');
+    if (bannerSlider && bannerSlider.querySelectorAll('.swiper-slide').length > 1) {
+        new Swiper(bannerSlider, {
+            loop: true,
+            speed: 600,
+            autoplay: {
+                delay: 5000,
+                disableOnInteraction: false,
+                pauseOnMouseEnter: true,
+            },
+            pagination: {
+                el: bannerSlider.querySelector('.banner-slider-pagination'),
+                clickable: true,
+            },
+            navigation: {
+                nextEl: bannerSlider.querySelector('.banner-slider-next'),
+                prevEl: bannerSlider.querySelector('.banner-slider-prev'),
+            },
+        });
+    }
 });
 </script>
